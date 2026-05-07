@@ -1,0 +1,59 @@
+<!-- TextDiff 应用图标 - SVG 源文件 -->
+<!-- 参考: TextDiff-DevPlan.md Week 13 应用图标设计 -->
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect x="32" y="32" width="448" height="448" rx="64" fill="url(#bgGradient)"/>
+  
+  <!-- 文件图标 - 左侧文件 -->
+  <g transform="translate(100, 140)">
+    <rect x="0" y="0" width="120" height="160" rx="12" fill="#ffffff" fill-opacity="0.95"/>
+    <rect x="0" y="0" width="120" height="40" rx="12" fill="#e5e7eb"/>
+    <rect x="0" y="28" width="120" height="12" fill="#e5e7eb"/>
+    <!-- 文档折叠角 -->
+    <path d="M84 0 L120 0 L120 36 Z" fill="#d1d5db"/>
+    <!-- 文档行 -->
+    <rect x="16" y="56" width="88" height="6" rx="3" fill="#ef4444" fill-opacity="0.7"/>
+    <rect x="16" y="72" width="72" height="6" rx="3" fill="#9ca3af"/>
+    <rect x="16" y="88" width="80" height="6" rx="3" fill="#9ca3af"/>
+    <rect x="16" y="104" width="56" height="6" rx="3" fill="#9ca3af"/>
+    <rect x="16" y="128" width="88" height="6" rx="3" fill="#22c55e" fill-opacity="0.7"/>
+  </g>
+  
+  <!-- 文件图标 - 右侧文件 -->
+  <g transform="translate(292, 140)">
+    <rect x="0" y="0" width="120" height="160" rx="12" fill="#ffffff" fill-opacity="0.95"/>
+    <rect x="0" y="0" width="120" height="40" rx="12" fill="#e5e7eb"/>
+    <rect x="0" y="28" width="120" height="12" fill="#e5e7eb"/>
+    <!-- 文档折叠角 -->
+    <path d="M84 0 L120 0 L120 36 Z" fill="#d1d5db"/>
+    <!-- 文档行 -->
+    <rect x="16" y="56" width="88" height="6" rx="3" fill="#9ca3af"/>
+    <rect x="16" y="72" width="72" height="6" rx="3" fill="#9ca3af"/>
+    <rect x="16" y="88" width="80" height="6" rx="3" fill="#9ca3af"/>
+    <rect x="16" y="104" width="56" height="6" rx="3" fill="#9ca3af"/>
+    <rect x="16" y="128" width="88" height="6" rx="3" fill="#9ca3af"/>
+  </g>
+  
+  <!-- 差异指示器 -->
+  <g transform="translate(236, 200)">
+    <!-- 左箭头 -->
+    <path d="M-16 20 L-8 12 L-8 16 L8 16 L8 24 L-8 24 L-8 28 Z" fill="#ef4444"/>
+    <!-- 右箭头 -->
+    <path d="M56 20 L48 12 L48 16 L32 16 L32 24 L48 24 L48 28 Z" fill="#22c55e"/>
+  </g>
+  
+  <!-- 底部品牌标识 -->
+  <text x="256" y="380" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="white">TextDiff</text>
+  <text x="256" y="410" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="rgba(255,255,255,0.7)">Text Compare Tool</text>
+</svg>

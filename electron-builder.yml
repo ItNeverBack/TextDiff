@@ -1,0 +1,146 @@
+# Electron Builder 配置
+# 参考: TextDiff-DevPlan.md §2.8.4 打包与发布准备
+
+appId: com.textdiff.app
+productName: TextDiff
+copyright: Copyright © 2026 TextDiff Team
+
+# 输出目录
+directories:
+  output: dist
+  buildResources: build
+
+# 应用图标
+icon: build/icon.png
+
+# 打包文件配置
+files:
+  - "out/**/*"
+  - "!out/**/*.map"
+  - "!out/**/__tests__/**/*"
+  - "!out/**/node_modules/**/*"
+  # 包含 migrations SQL 文件
+  - "packages/main/src/session/migrations/**/*"
+
+# 额外资源（Worker 脚本等）
+extraResources:
+  - from: "out/main/diff/worker"
+    to: "app/out/main/diff/worker"
+    filter:
+      - "**/*.js"
+
+# Windows 配置
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+    - target: portable
+      arch:
+        - x64
+  publisherName: TextDiff Team
+  legalTrademarks: Copyright © 2026 TextDiff Team
+
+# NSIS 安装程序配置
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: TextDiff
+  artifactName: "${name}-${version}-setup-${arch}.${ext}"
+
+# 便携版配置
+portable:
+  artifactName: "${name}-${version}-portable-${arch}.${ext}"
+
+# Linux 配置
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+    - target: rpm
+      arch:
+        - x64
+    - target: tar.gz
+      arch:
+        - x64
+        - arm64
+  category: Development
+  maintainer: TextDiff Team
+  vendor: TextDiff
+  synopsis: Professional text comparison tool
+  description: A powerful text comparison tool for Linux with support for file diff, directory diff, and three-way merge.
+  desktop:
+    Name: TextDiff
+    Comment: Professional text comparison tool
+    Categories: Development;TextEditor;
+    MimeType: text/plain;
+    Icon: textdiff
+    Terminal: false
+
+# AppImage 配置
+appImage:
+  artifactName: "${name}-${version}-${arch}.${ext}"
+
+# deb 配置
+deb:
+  priority: optional
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+
+# rpm 配置
+rpm:
+  depends:
+    - gtk3
+    - libnotify
+    - nss
+    - libXScrnSaver
+    - libXtst
+    - xdg-utils
+    - at-spi2-core
+    - libuuid
+    - libsecret
+
+# 协议和文件关联
+protocols:
+  - name: TextDiff
+    schemes:
+      - textdiff
+
+fileAssociations:
+  - ext: diff
+    name: Diff File
+    description: Unified diff format
+  - ext: patch
+    name: Patch File
+    description: Patch file format
+
+# 发布配置
+publish:
+  provider: github
+  owner: textdiff
+  repo: textdiff
+
+# 压缩配置
+compression: maximum
+
+# asar 配置
+asar: true
+asarUnpack:
+  - "out/main/diff/worker/**/*.js"

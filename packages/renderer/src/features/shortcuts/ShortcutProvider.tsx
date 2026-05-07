@@ -1,0 +1,223 @@
+import { useCallback, useEffect, useRef } from 'react'
+import { SHORTCUTS } from '@shared/constants'
+import type { ShortcutDefinition } from '@shared/constants'
+import { useDiffStore, useTabStore, useSessionStore } from '../../stores'
+import { useTheme } from '../theme'
+import { api } from '../../lib/api'
+
+type ShortcutHandler = () => void
+
+export interface ShortcutConflict {
+  key: string
+  actions: string[]
+}
+
+export interface ShortcutProviderProps {
+  children: React.ReactNode
+  onPasteDialog?: () => void
+  onShowSearch?: () => void
+  onShowSettings?: () => void
+  onShowSessionHistory?: () => void
+  onCloseOverlay?: () => void
+  onConflictsDetected?: (conflicts: ShortcutConflict[]) => void
+}
+
+export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShowSettings, onShowSessionHistory, onCloseOverlay, onConflictsDetected }: ShortcutProviderProps) {
+  const { toggleTheme } = useTheme()
+  const { nextChunk, prevChunk, firstChunk, lastChunk, toggleCollapse, swapFiles, viewMode, setViewMode, setLeftFile, setRightFile, leftFile, rightFile } = useDiffStore()
+  const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles, swapActiveTabFiles } = useTabStore()
+  const { saveSession } = useSessionStore()
+
+  const openFile = useCallback(async (side: 'left' | 'right') => {
+    try {
+      const file = await api.openFile(side)
+      if (file) {
+        const { tabs: currentTabs, activeIndex: currentIndex } = useTabStore.getState()
+        const currentTab = currentTabs[currentIndex]
+        if (side === 'left') {
+          setLeftFile(file)
+          setActiveTabFiles(file, currentTab.rightFile)
+        } else {
+          setRightFile(file)
+          setActiveTabFiles(currentTab.leftFile, file)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to open file:', error)
+    }
+  }, [setLeftFile, setRightFile, setActiveTabFiles])
+
+  const handlers: Record<string, ShortcutHandler> = {
+    openFilePair: () => {
+      openFile('left').then(() => openFile('right'))
+    },
+    openLeftFile: () => openFile('left'),
+    openRightFile: () => openFile('right'),
+    saveSession: async () => {
+      if (leftFile && rightFile) {
+        const leftName = leftFile.path?.split(/[\/]/).pop() || '未命名'
+        const rightName = rightFile.path?.split(/[\/]/).pop() || '未命名'
+        const name = `${leftName} vs ${rightName}`
+
+        try {
+          // 获取当前 diff 结果中的统计信息
+          const { diffResult } = useDiffStore.getState()
+          await saveSession({
+            name,
+            left: leftFile,
+            right: rightFile,
+            stats: diffResult?.stats,  // 包含差异统计
+            options: {
+              ignoreWhitespace: 'none',
+              ignoreCase: false,
+              ignoreLineEndings: true,
+              ignorePatterns: [],
+              ignoreComments: false,
+              commentPrefixes: ['//', '#', '--'],
+              algorithm: 'myers',
+              contextLines: 3
+            }
+          })
+          // 可以在这里添加保存成功的提示
+        } catch (error) {
+          console.error('Failed to save session:', error)
+        }
+      }
+    },
+    newTab: () => addTab(),
+    closeTab: () => {
+      if (tabs.length > 1) {
+        closeTab(activeIndex)
+      }
+    },
+    search: () => {
+      onShowSearch?.()
+    },
+    viewSplit: () => {
+      setViewMode('split')
+    },
+    viewUnified: () => {
+      setViewMode('unified')
+    },
+    viewDirectory: () => {
+      setViewMode('directory')
+    },
+    viewMerge: () => {
+      setViewMode('merge')
+    },
+    toggleCollapse: () => toggleCollapse(),
+    toggleTheme: () => toggleTheme(),
+    pasteText: () => onPasteDialog?.(),
+    openSettings: () => {
+      onShowSettings?.()
+    },
+    showSessionHistory: () => {
+      onShowSessionHistory?.()
+    },
+    nextDiff: () => nextChunk(),
+    prevDiff: () => prevChunk(),
+    firstDiff: () => firstChunk(),
+    lastDiff: () => lastChunk(),
+    closeOverlay: () => {
+      onCloseOverlay?.()
+    },
+    swapFiles: () => {
+      swapFiles()
+      swapActiveTabFiles()
+    }
+  }
+
+  // 存储当前的快捷键定义，用于检测变化
+  const shortcutsRef = useRef<ShortcutDefinition[]>(SHORTCUTS)
+  const conflictsRef = useRef<ShortcutConflict[]>([])
+
+  // 快捷键冲突检测 - 支持外部传入的快捷键列表
+  const detectConflicts = useCallback((shortcuts: ShortcutDefinition[] = SHORTCUTS): ShortcutConflict[] => {
+    const keyMap = new Map<string, string[]>()
+
+    shortcuts.forEach(shortcut => {
+      const existing = keyMap.get(shortcut.key) || []
+      existing.push(shortcut.action)
+      keyMap.set(shortcut.key, existing)
+    })
+
+    const conflicts: ShortcutConflict[] = []
+    keyMap.forEach((actions, key) => {
+      if (actions.length > 1) {
+        conflicts.push({ key, actions })
+      }
+    })
+
+    if (conflicts.length > 0) {
+      console.warn('快捷键冲突检测:', conflicts.map(c =>
+        `快捷键冲突: ${c.key} 被 ${c.actions.join(', ')} 同时使用`
+      ))
+    }
+
+    return conflicts
+  }, [])
+
+  // 检测快捷键变化并重新检测冲突
+  useEffect(() => {
+    // 检测快捷键定义是否发生变化
+    const currentShortcuts = JSON.stringify(SHORTCUTS)
+    const prevShortcuts = JSON.stringify(shortcutsRef.current)
+
+    if (currentShortcuts !== prevShortcuts) {
+      shortcutsRef.current = SHORTCUTS
+      const conflicts = detectConflicts(SHORTCUTS)
+      conflictsRef.current = conflicts
+
+      if (conflicts.length > 0 && onConflictsDetected) {
+        onConflictsDetected(conflicts)
+      }
+    }
+  }, [SHORTCUTS, detectConflicts, onConflictsDetected])
+
+  // 初始化时检测冲突
+  useEffect(() => {
+    const conflicts = detectConflicts(SHORTCUTS)
+    conflictsRef.current = conflicts
+
+    if (conflicts.length > 0 && onConflictsDetected) {
+      onConflictsDetected(conflicts)
+    }
+  }, [detectConflicts, onConflictsDetected])
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // 如果正在输入框中，不处理快捷键（除了 Escape）
+    const target = event.target as HTMLElement
+    const isInputElement = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+    const isMonacoEditor = !!target.closest('.monaco-editor')
+    if ((isInputElement || isMonacoEditor) && event.key !== 'Escape') {
+      return
+    }
+
+    const key = []
+
+    if (event.ctrlKey || event.metaKey) key.push('Ctrl')
+    if (event.altKey) key.push('Alt')
+    if (event.shiftKey) key.push('Shift')
+
+    const keyName = event.key.length === 1 ? event.key.toUpperCase() : event.key
+    key.push(keyName)
+
+    const shortcut = key.join('+')
+
+    const found = SHORTCUTS.find(s => s.key === shortcut)
+    if (found) {
+      const handler = handlers[found.action]
+      if (handler) {
+        event.preventDefault()
+        handler()
+      }
+    }
+  }, [handlers])
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+
+  return <>{children}</>
+}

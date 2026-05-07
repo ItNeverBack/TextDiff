@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+# Post-installation script for textdiff
+
+echo "Setting up TextDiff..."
+
+# Create symlink if it doesn't exist
+if [ ! -L /usr/bin/textdiff ]; then
+    ln -sf /opt/textdiff/textdiff /usr/bin/textdiff
+fi
+
+# Set permissions
+chmod 4755 /opt/textdiff/chrome-sandbox 2>/dev/null || true
+chmod +x /opt/textdiff/textdiff
+
+# Update icon cache
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
+# Update desktop database
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+echo "TextDiff has been installed successfully!"
+echo "Run 'textdiff' from terminal or find it in your application menu."
+
+exit 0

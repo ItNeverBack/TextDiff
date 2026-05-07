@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>{{{title}}}</title>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>{{{headerTitle}}}</h1>
+      <div class="meta">
+        <p><strong>左侧目录:</strong> {{{leftPath}}}</p>
+        <p><strong>右侧目录:</strong> {{{rightPath}}}</p>
+        <p><strong>生成时间:</strong> {{{generatedAt}}}</p>
+      </div>
+    </header>
+    <section class="summary">
+      <h2>统计概览</h2>
+      {{{summaryHtml}}}
+    </section>
+    <section class="chart">
+      <h2>差异分布</h2>
+      {{{chartHtml}}}
+    </section>
+    <section class="entries">
+      <h2>文件列表 ({{{entryCount}}} 个文件)</h2>
+      <div class="tree">{{{entriesHtml}}}</div>
+    </section>
+    <footer>
+      <p>由 TextDiff 生成</p>
+    </footer>
+  </div>
+</body>
+</html>

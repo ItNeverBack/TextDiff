@@ -1,0 +1,439 @@
+import type { FileInfo, DiffResult } from '@shared/types'
+import type { DirectoryComparison, DirectoryInfo, DirCompareOptions } from '@shared/types/directory.types'
+import { create } from 'zustand'
+import { generateSessionId } from '@shared/utils'
+import { useDiffStore } from './diff.store'
+import { useDirectoryCompareStore } from './directory.store'
+
+export interface TabInfo {
+  id: string
+  title: string
+  leftFile: FileInfo | null
+  rightFile: FileInfo | null
+  diffResult: DiffResult | null
+  hasChanges: boolean
+  isDirectoryView?: boolean
+  // 目录对比相关字段
+  directoryComparison?: DirectoryComparison | null
+  leftDirectory?: DirectoryInfo | null
+  rightDirectory?: DirectoryInfo | null
+  dirCompareOptions?: DirCompareOptions
+  // 目录树展开状态
+  expandedPaths?: string[]
+  // 视图模式
+  dirViewMode?: 'all' | 'diff-only' | 'left-only' | 'right-only'
+}
+
+interface TabState {
+  tabs: TabInfo[]
+  activeIndex: number
+}
+
+interface TabActions {
+  addTab: () => void
+  addTabWithFiles: (left: FileInfo, right: FileInfo) => void
+  addDirectoryTab: (leftPath: string, rightPath: string, comparison?: DirectoryComparison, options?: { startComparison?: boolean }) => void
+  closeTab: (index: number) => void
+  selectTab: (index: number) => void
+  updateTab: (index: number, updates: Partial<TabInfo>) => void
+  updateTabTitle: (index: number, title: string) => void
+  setActiveTabFiles: (left: FileInfo | null, right: FileInfo | null) => void
+  setActiveTabDiffResult: (result: DiffResult | null) => void
+  setActiveTabDirectoryComparison: (comparison: DirectoryComparison | null) => void
+  setActiveTabDirectories: (leftDir: DirectoryInfo | null, rightDir: DirectoryInfo | null) => void
+  updateActiveTabDirViewMode: (mode: 'all' | 'diff-only' | 'left-only' | 'right-only') => void
+  updateActiveTabExpandedPaths: (paths: string[]) => void
+  swapActiveTabFiles: () => void
+  updateActiveTabContent: (side: 'left' | 'right', content: string) => void
+  markActiveTabAsSaved: () => void
+  saveCurrentDirectoryState: () => void
+  restoreDirectoryStateForTab: (index: number) => void
+}
+
+const createNewTab = (): TabInfo => ({
+  id: generateSessionId(),
+  title: '新对比',
+  leftFile: null,
+  rightFile: null,
+  diffResult: null,
+  hasChanges: false
+})
+
+export const useTabStore = create<TabState & TabActions>((set, get) => ({
+  tabs: [createNewTab()],
+  activeIndex: 0,
+
+  addTab: () => {
+    const { activeIndex, tabs } = get()
+
+    // 保存当前 tab 的目录状态（如果是目录视图）
+    const currentTab = tabs[activeIndex]
+    if (currentTab?.isDirectoryView) {
+      get().saveCurrentDirectoryState()
+    }
+
+    const newTab = createNewTab()
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeIndex: state.tabs.length
+    }))
+    // 重置 diffStore 状态，确保新标签页是全新的对比
+    const { reset, setViewMode } = useDiffStore.getState()
+    reset()
+    setViewMode('split')
+    // 重置目录对比状态，确保新标签页不残留上一次的目录对比结果
+    const { clearComparison } = useDirectoryCompareStore.getState()
+    clearComparison()
+  },
+
+  addTabWithFiles: (left, right) => {
+    const leftName = left.path?.split('/').pop() || left.path?.split('\\').pop() || ''
+    const rightName = right.path?.split('/').pop() || right.path?.split('\\').pop() || ''
+    const title = `${leftName} vs ${rightName}`
+    const newTab: TabInfo = {
+      id: generateSessionId(),
+      title,
+      leftFile: left,
+      rightFile: right,
+      diffResult: null,
+      hasChanges: false,
+      isDirectoryView: false
+    }
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeIndex: state.tabs.length
+    }))
+    // 重置 diffStore 状态
+    const { reset } = useDiffStore.getState()
+    reset()
+    // 重置目录对比状态
+    const { clearComparison } = useDirectoryCompareStore.getState()
+    clearComparison()
+  },
+
+  addDirectoryTab: (leftPath: string, rightPath: string, comparison?: DirectoryComparison, options?: { startComparison?: boolean }) => {
+    const startComparisonNow = options?.startComparison !== false
+    const leftName = leftPath ? (leftPath.split('/').pop() || leftPath.split('\\').pop() || '') : '选择目录'
+    const rightName = rightPath ? (rightPath.split('/').pop() || rightPath.split('\\').pop() || '') : '选择目录'
+    const title = leftPath && rightPath ? `${leftName} vs ${rightName}` : '目录对比'
+
+    // 保存当前 tab 的目录状态（如果是目录视图）
+    const { activeIndex, tabs } = get()
+    const currentTab = tabs[activeIndex]
+    if (currentTab?.isDirectoryView) {
+      get().saveCurrentDirectoryState()
+    }
+
+    const newTab: TabInfo = {
+      id: generateSessionId(),
+      title,
+      leftFile: null,
+      rightFile: null,
+      diffResult: null,
+      hasChanges: false,
+      isDirectoryView: true,
+      directoryComparison: comparison || null,
+      dirViewMode: 'all',
+      expandedPaths: [],
+      leftDirectory: leftPath ? { path: leftPath, name: leftName, totalFiles: 0, totalSize: 0, lastModified: new Date() } : undefined,
+      rightDirectory: rightPath ? { path: rightPath, name: rightName, totalFiles: 0, totalSize: 0, lastModified: new Date() } : undefined
+    }
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeIndex: state.tabs.length
+    }))
+    // 重置 diffStore 状态
+    const { reset, setViewMode } = useDiffStore.getState()
+    reset()
+    setViewMode('directory')
+    // 只有在需要时才启动目录对比
+    if (startComparisonNow && leftPath && rightPath) {
+      const { startComparison } = useDirectoryCompareStore.getState()
+      startComparison(leftPath, rightPath)
+    } else {
+      // 清空目录对比状态，显示目录选择界面
+      const { clearComparison } = useDirectoryCompareStore.getState()
+      clearComparison()
+    }
+  },
+
+  closeTab: (index) => {
+    const { tabs, activeIndex } = get()
+    if (tabs.length <= 1) return
+
+    // 如果关闭的是当前激活的 tab 且有目录对比状态，先保存
+    if (index === activeIndex) {
+      const currentTab = tabs[activeIndex]
+      if (currentTab?.isDirectoryView) {
+        get().saveCurrentDirectoryState()
+      }
+    }
+
+    const newTabs = tabs.filter((_, i) => i !== index)
+    let newActiveIndex = activeIndex
+
+    if (index <= activeIndex) {
+      newActiveIndex = Math.max(0, activeIndex - 1)
+    }
+
+    if (newActiveIndex >= newTabs.length) {
+      newActiveIndex = newTabs.length - 1
+    }
+
+    set({ tabs: newTabs, activeIndex: newActiveIndex })
+
+    // 如果关闭后还有 tab，恢复新激活 tab 的状态
+    if (newTabs.length > 0) {
+      const newTab = newTabs[newActiveIndex]
+      if (newTab?.isDirectoryView) {
+        get().restoreDirectoryStateForTab(newActiveIndex)
+      } else {
+        const { clearComparison } = useDirectoryCompareStore.getState()
+        clearComparison()
+      }
+
+      // 同步 diffStore 状态
+      const { setLeftFile, setRightFile, setViewMode } = useDiffStore.getState()
+      setLeftFile(newTab.leftFile)
+      setRightFile(newTab.rightFile)
+      setViewMode(newTab.isDirectoryView ? 'directory' : 'split')
+    }
+  },
+
+  selectTab: (index) => {
+    const { tabs, activeIndex } = get()
+    if (index >= 0 && index < tabs.length && index !== activeIndex) {
+      // 保存当前 tab 的目录对比状态
+      const currentTab = tabs[activeIndex]
+      if (currentTab?.isDirectoryView) {
+        get().saveCurrentDirectoryState()
+      }
+
+      // 切换 tab
+      set({ activeIndex: index })
+
+      // 恢复新 tab 的目录对比状态
+      const newTab = tabs[index]
+      if (newTab?.isDirectoryView) {
+        get().restoreDirectoryStateForTab(index)
+      } else {
+        // 如果不是目录视图，清空目录对比状态
+        const { clearComparison } = useDirectoryCompareStore.getState()
+        clearComparison()
+      }
+
+      // 同步 diffStore 状态
+      const { setLeftFile, setRightFile, setViewMode } = useDiffStore.getState()
+      if (newTab) {
+        setLeftFile(newTab.leftFile)
+        setRightFile(newTab.rightFile)
+        setViewMode(newTab.isDirectoryView ? 'directory' : 'split')
+      }
+    }
+  },
+
+  updateTab: (index, updates) => {
+    set((state) => ({
+      tabs: state.tabs.map((tab, i) =>
+        i === index ? { ...tab, ...updates } : tab
+      )
+    }))
+  },
+
+  updateTabTitle: (index, title) => {
+    set((state) => ({
+      tabs: state.tabs.map((tab, i) =>
+        i === index ? { ...tab, title } : tab
+      )
+    }))
+  },
+
+  setActiveTabFiles: (left, right) => {
+    const { activeIndex, tabs } = get()
+    const leftName = left?.path?.split('/').pop() || left?.path?.split('\\').pop() || ''
+    const rightName = right?.path?.split('/').pop() || right?.path?.split('\\').pop() || ''
+    
+    const title = left && right 
+      ? `${leftName} vs ${rightName}` 
+      : left ? `${leftName}` 
+      : right ? `${rightName}`
+      : '新对比'
+
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex 
+          ? { ...tab, leftFile: left, rightFile: right, title, hasChanges: true }
+          : tab
+      )
+    })
+  },
+
+  setActiveTabDiffResult: (result) => {
+    const { activeIndex, tabs } = get()
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex
+          ? { ...tab, diffResult: result }
+          : tab
+      )
+    })
+  },
+
+  setActiveTabDirectoryComparison: (comparison) => {
+    const { activeIndex, tabs } = get()
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex
+          ? { ...tab, directoryComparison: comparison, isDirectoryView: true }
+          : tab
+      )
+    })
+  },
+
+  setActiveTabDirectories: (leftDir, rightDir) => {
+    const { activeIndex, tabs } = get()
+    const leftName = leftDir?.name || leftDir?.path?.split('/').pop() || leftDir?.path?.split('\\').pop() || ''
+    const rightName = rightDir?.name || rightDir?.path?.split('/').pop() || rightDir?.path?.split('\\').pop() || ''
+    const title = leftDir && rightDir
+      ? `${leftName} vs ${rightName}`
+      : leftDir ? `${leftName}`
+      : rightDir ? `${rightName}`
+      : '新对比'
+
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex
+          ? { ...tab, leftDirectory: leftDir, rightDirectory: rightDir, title, isDirectoryView: true }
+          : tab
+      )
+    })
+  },
+
+  updateActiveTabDirViewMode: (mode) => {
+    const { activeIndex, tabs } = get()
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex
+          ? { ...tab, dirViewMode: mode }
+          : tab
+      )
+    })
+  },
+
+  updateActiveTabExpandedPaths: (paths) => {
+    const { activeIndex, tabs } = get()
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex
+          ? { ...tab, expandedPaths: paths }
+          : tab
+      )
+    })
+  },
+
+  saveCurrentDirectoryState: () => {
+    const { activeIndex } = get()
+    const dirStore = useDirectoryCompareStore.getState()
+
+    if (!dirStore.comparison) return
+
+    // 保存当前目录对比状态到 active tab
+    get().updateTab(activeIndex, {
+      directoryComparison: dirStore.comparison,
+      leftDirectory: dirStore.comparison.leftRoot,
+      rightDirectory: dirStore.comparison.rightRoot,
+      expandedPaths: Array.from(dirStore.expandedPaths),
+      dirViewMode: dirStore.viewMode,
+      isDirectoryView: true
+    })
+  },
+
+  restoreDirectoryStateForTab: (index) => {
+    const { tabs } = get()
+    const tab = tabs[index]
+    if (!tab || !tab.isDirectoryView) return
+
+    const dirStore = useDirectoryCompareStore.getState()
+
+    // 恢复目录对比状态
+    if (tab.directoryComparison) {
+      dirStore.setComparison(tab.directoryComparison)
+    } else if (tab.leftDirectory && tab.rightDirectory) {
+      // 如果有目录信息但没有对比结果，启动新的对比
+      dirStore.startComparison(tab.leftDirectory.path, tab.rightDirectory.path)
+    } else {
+      // 清空目录对比状态
+      dirStore.clearComparison()
+    }
+
+    // 恢复展开状态
+    if (tab.expandedPaths) {
+      dirStore.setExpandedPaths(tab.expandedPaths)
+    }
+
+    // 恢复视图模式
+    if (tab.dirViewMode) {
+      dirStore.setViewMode(tab.dirViewMode)
+    }
+  },
+
+  swapActiveTabFiles: () => {
+    const { activeIndex, tabs } = get()
+    const activeTab = tabs[activeIndex]
+    if (!activeTab) return
+
+    const { leftFile, rightFile } = activeTab
+    const leftName = rightFile?.path?.split('/').pop() || rightFile?.path?.split('\\').pop() || ''
+    const rightName = leftFile?.path?.split('/').pop() || leftFile?.path?.split('\\').pop() || ''
+    
+    const title = leftFile && rightFile 
+      ? `${leftName} vs ${rightName}` 
+      : leftFile ? `${leftName}` 
+      : rightFile ? `${rightName}`
+      : '新对比'
+
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex 
+          ? { ...tab, leftFile: rightFile, rightFile: leftFile, title, hasChanges: true }
+          : tab
+      )
+    })
+  },
+
+  updateActiveTabContent: (side, content) => {
+    const { activeIndex, tabs } = get()
+    const activeTab = tabs[activeIndex]
+    if (!activeTab) return
+
+    const fileKey = side === 'left' ? 'leftFile' : 'rightFile'
+    const currentFile = activeTab[fileKey]
+    if (!currentFile) return
+
+    // 检查内容是否真的变化了
+    if (currentFile.content === content) return
+
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex 
+          ? { 
+              ...tab, 
+              [fileKey]: { ...currentFile, content },
+              hasChanges: true 
+            }
+          : tab
+      )
+    })
+  },
+
+  markActiveTabAsSaved: () => {
+    const { activeIndex, tabs } = get()
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === activeIndex 
+          ? { ...tab, hasChanges: false }
+          : tab
+      )
+    })
+  }
+}))

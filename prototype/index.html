@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextDiff — 专业文本对比工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300..900&family=Geist:wght@300..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════════════ -->
+<div id="app" class="app-shell">
+
+  <!-- ── 菜单栏 ── -->
+  <div class="menu-bar" role="menubar">
+    <div class="menu-brand">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <path d="M14 2v6h6"/>
+        <path d="M8 13h8M8 17h5"/>
+      </svg>
+      <span class="brand-name">TextDiff</span>
+    </div>
+    <div class="menu-items">
+      <div class="menu-item has-dropdown" tabindex="0" role="menuitem" aria-haspopup="true">
+        <span>文件</span>
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" onclick="openFileDialog('both')">
+            <span class="menu-label">打开文件对...</span>
+            <span class="menu-shortcut">Ctrl+O</span>
+          </div>
+          <div class="menu-dropdown-item" onclick="openFileDialog('left')">
+            <span class="menu-label">打开左侧文件</span>
+            <span class="menu-shortcut">Ctrl+L</span>
+          </div>
+          <div class="menu-dropdown-item" onclick="openFileDialog('right')">
+            <span class="menu-label">打开右侧文件</span>
+            <span class="menu-shortcut">Ctrl+R</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-dropdown-item" onclick="openPasteDialog()">
+            <span class="menu-label">粘贴文本对比</span>
+            <span class="menu-shortcut">Ctrl+Shift+V</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-dropdown-item" onclick="saveSession()">
+            <span class="menu-label">保存会话</span>
+            <span class="menu-shortcut">Ctrl+S</span>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item has-dropdown" tabindex="0" role="menuitem" aria-haspopup="true">
+        <span>编辑</span>
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" onclick="swapFiles()">
+            <span class="menu-label">交换左右文件</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-dropdown-item" onclick="toggleCollapse()">
+            <span class="menu-label">折叠相同区域</span>
+            <span class="menu-shortcut">Ctrl+Shift+C</span>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item has-dropdown" tabindex="0" role="menuitem" aria-haspopup="true">
+        <span>视图</span>
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" onclick="setViewMode('split')">
+            <span class="menu-label">双栏对比</span>
+            <span class="menu-shortcut">Ctrl+1</span>
+          </div>
+          <div class="menu-dropdown-item" onclick="setViewMode('unified')">
+            <span class="menu-label">统一视图</span>
+            <span class="menu-shortcut">Ctrl+2</span>
+          </div>
+          <div class="menu-dropdown-item" onclick="setViewMode('directory')">
+            <span class="menu-label">目录对比</span>
+            <span class="menu-shortcut">Ctrl+3</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-dropdown-item" onclick="toggleTheme()">
+            <span class="menu-label">切换主题</span>
+            <span class="menu-shortcut">Ctrl+Shift+T</span>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item has-dropdown" tabindex="0" role="menuitem" aria-haspopup="true">
+        <span>会话</span>
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" onclick="addTab()">
+            <span class="menu-label">新建对比</span>
+            <span class="menu-shortcut">Ctrl+T</span>
+          </div>
+          <div class="menu-dropdown-item" onclick="closeCurrentTab()">
+            <span class="menu-label">关闭当前标签</span>
+            <span class="menu-shortcut">Ctrl+W</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-dropdown-item" onclick="showSessionList()">
+            <span class="menu-label">会话历史</span>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item has-dropdown" tabindex="0" role="menuitem" aria-haspopup="true">
+        <span>工具</span>
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" onclick="toggleIgnorePanel()">
+            <span class="menu-label">忽略规则设置</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-dropdown-item" onclick="showSettings()">
+            <span class="menu-label">首选项</span>
+            <span class="menu-shortcut">Ctrl+,</span>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item has-dropdown" tabindex="0" role="menuitem" aria-haspopup="true">
+        <span>帮助</span>
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" onclick="showShortcuts()">
+            <span class="menu-label">快捷键</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-dropdown-item" onclick="showAbout()">
+            <span class="menu-label">关于 TextDiff</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="menu-actions">
+      <button class="icon-btn" id="btn-theme" title="切换主题 (Ctrl+Shift+T)" aria-label="切换主题">
+        <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="icon-btn" title="新建对比 (Ctrl+T)" aria-label="新建对比" onclick="addTab()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 工具栏 ── -->
+  <div class="toolbar" role="toolbar" aria-label="主工具栏">
+    <div class="toolbar-group">
+      <button class="toolbar-btn file-btn" id="btn-open-left" onclick="openFileDialog('left')" title="打开左侧文件 (Ctrl+L)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>左侧文件</span>
+        <kbd>Ctrl+L</kbd>
+      </button>
+      <button class="toolbar-btn file-btn" id="btn-open-right" onclick="openFileDialog('right')" title="打开右侧文件 (Ctrl+R)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>右侧文件</span>
+        <kbd>Ctrl+R</kbd>
+      </button>
+    </div>
+
+    <div class="toolbar-separator"></div>
+
+    <!-- 忽略规则 -->
+    <div class="toolbar-group">
+      <div class="ignore-group">
+        <span class="ignore-label">忽略：</span>
+        <label class="toggle-chip" title="忽略空白符差异">
+          <input type="checkbox" id="ign-ws" checked>
+          <span>空白符</span>
+        </label>
+        <label class="toggle-chip" title="忽略大小写">
+          <input type="checkbox" id="ign-case">
+          <span>大小写</span>
+        </label>
+        <label class="toggle-chip" title="忽略行尾符">
+          <input type="checkbox" id="ign-eol" checked>
+          <span>行尾符</span>
+        </label>
+        <button class="toolbar-btn compact" onclick="toggleIgnorePanel()" title="更多忽略规则">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M5.93 4.93a10 10 0 0 1 0 14.14"/></svg>
+          更多
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-separator"></div>
+
+    <!-- 差异导航 -->
+    <div class="toolbar-group nav-group">
+      <button class="toolbar-btn icon-only" onclick="navigateDiff('first')" title="第一处差异 (Alt+Home)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+      </button>
+      <button class="toolbar-btn icon-only" onclick="navigateDiff('prev')" title="上一处差异 (F6)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+      </button>
+      <div class="diff-counter" id="diff-counter" aria-live="polite">
+        <span id="current-chunk">1</span>/<span id="total-chunks">12</span>
+        <span class="diff-label">处差异</span>
+      </div>
+      <button class="toolbar-btn icon-only" onclick="navigateDiff('next')" title="下一处差异 (F7)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <button class="toolbar-btn icon-only" onclick="navigateDiff('last')" title="最后一处差异 (Alt+End)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+      </button>
+    </div>
+
+    <div class="toolbar-separator"></div>
+
+    <!-- 视图模式 -->
+    <div class="toolbar-group">
+      <div class="view-mode-group" role="group" aria-label="视图模式">
+        <button class="view-mode-btn active" id="btn-split" onclick="setViewMode('split')" title="双栏对比视图">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          双栏
+        </button>
+        <button class="view-mode-btn" id="btn-unified" onclick="setViewMode('unified')" title="统一视图">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          统一
+        </button>
+        <button class="view-mode-btn" id="btn-dir" onclick="setViewMode('directory')" title="目录对比">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>
+          目录
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-separator"></div>
+
+    <!-- 折叠控制 -->
+    <div class="toolbar-group">
+      <button class="toolbar-btn" onclick="toggleCollapse()" title="折叠/展开相同区域 (Ctrl+Shift+C)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l7-7 7 7M5 15l7 7 7-7"/></svg>
+        折叠相同
+      </button>
+    </div>
+
+    <div class="toolbar-flex-spacer"></div>
+
+    <!-- 搜索 -->
+    <div class="toolbar-group">
+      <div class="search-box" id="search-box" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="搜索内容..." aria-label="搜索">
+        <button onclick="closeSearch()" aria-label="关闭搜索">×</button>
+      </div>
+      <button class="toolbar-btn icon-only" onclick="toggleSearch()" title="搜索 (Ctrl+F)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 标签页 ── -->
+  <div class="tab-bar" role="tablist">
+    <div class="tab active" id="tab-0" role="tab" aria-selected="true" onclick="switchTab(0)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+      <span class="tab-title">config.yml vs config.yml.bak</span>
+      <span class="tab-badge">12</span>
+      <button class="tab-close" onclick="closeTab(event, 0)" aria-label="关闭标签">×</button>
+    </div>
+    <div class="tab" id="tab-1" role="tab" aria-selected="false" onclick="switchTab(1)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+      <span class="tab-title">main.ts vs main.ts</span>
+      <span class="tab-badge diff-badge-modify">7</span>
+      <button class="tab-close" onclick="closeTab(event, 1)" aria-label="关闭标签">×</button>
+    </div>
+    <button class="tab-add" onclick="addTab()" title="新建对比 (Ctrl+T)" aria-label="新建对比标签">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <!-- ── 主内容区域 ── -->
+  <div class="content-area" id="content-area">
+
+    <!-- ===== 双栏 Diff 视图 ===== -->
+    <div id="view-split" class="view-panel active">
+      <!-- 文件信息栏 -->
+      <div class="file-info-bar">
+        <div class="file-info left" id="file-info-left">
+          <div class="file-info-path">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            <span class="file-path" title="/home/user/project/config.yml">/home/user/project/config.yml</span>
+          </div>
+          <div class="file-meta">
+            <span class="meta-chip">UTF-8</span>
+            <span class="meta-chip">LF</span>
+            <span class="meta-chip">YAML</span>
+            <span class="meta-chip lines-chip"><span id="left-lines">48</span> 行</span>
+          </div>
+        </div>
+        <div class="file-info-divider">
+          <button class="swap-btn" onclick="swapFiles()" title="交换左右文件" aria-label="交换左右文件">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+          </button>
+        </div>
+        <div class="file-info right" id="file-info-right">
+          <div class="file-info-path">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            <span class="file-path" title="/home/user/project/config.yml.bak">/home/user/project/config.yml.bak</span>
+          </div>
+          <div class="file-meta">
+            <span class="meta-chip">UTF-8</span>
+            <span class="meta-chip">LF</span>
+            <span class="meta-chip">YAML</span>
+            <span class="meta-chip lines-chip"><span id="right-lines">52</span> 行</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diff 编辑器容器 -->
+      <div class="diff-editor-container" id="diff-editor-container">
+        <div class="diff-pane left-pane" id="left-pane">
+          <div class="editor-scroll" id="left-scroll" onscroll="syncScroll('left')">
+            <div class="editor-content" id="left-editor"></div>
+          </div>
+        </div>
+        <!-- 中间地图 -->
+        <div class="diff-minimap" id="diff-minimap" aria-hidden="true">
+          <canvas id="minimap-canvas" width="28"></canvas>
+        </div>
+        <div class="diff-pane right-pane" id="right-pane">
+          <div class="editor-scroll" id="right-scroll" onscroll="syncScroll('right')">
+            <div class="editor-content" id="right-editor"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 统一视图 ===== -->
+    <div id="view-unified" class="view-panel">
+      <div class="unified-header">
+        <span class="unified-title">统一差异视图（Unified Diff）</span>
+        <div class="file-meta" style="margin-left:auto">
+          <span class="meta-chip">config.yml</span>
+          <span class="meta-chip diff-added">+8 行</span>
+          <span class="meta-chip diff-deleted">-4 行</span>
+        </div>
+      </div>
+      <div class="unified-content" id="unified-content"></div>
+    </div>
+
+    <!-- ===== 目录对比视图 ===== -->
+    <div id="view-directory" class="view-panel">
+      <div class="dir-split">
+        <div class="dir-header">
+          <div class="dir-path-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>/home/user/project-v1</span>
+          </div>
+          <div class="dir-path-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>/home/user/project-v2</span>
+          </div>
+        </div>
+        <div class="dir-legend">
+          <span class="legend-item"><span class="status-dot equal"></span>相同</span>
+          <span class="legend-item"><span class="status-dot modified"></span>修改</span>
+          <span class="legend-item"><span class="status-dot left-only"></span>左侧独有</span>
+          <span class="legend-item"><span class="status-dot right-only"></span>右侧独有</span>
+        </div>
+        <div class="dir-tree" id="dir-tree" role="tree"></div>
+      </div>
+    </div>
+
+    <!-- ===== 欢迎/拖拽占位 ===== -->
+    <div id="view-welcome" class="view-panel" style="display:none">
+      <div class="welcome-content">
+        <div class="welcome-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+        </div>
+        <h2 class="welcome-title">拖拽文件开始对比</h2>
+        <p class="welcome-desc">支持拖拽文件、粘贴文本，或使用工具栏打开文件</p>
+        <div class="welcome-actions">
+          <button class="welcome-btn primary" onclick="openFileDialog('both')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            打开文件对
+          </button>
+          <button class="welcome-btn" onclick="openPasteDialog()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+            粘贴文本
+          </button>
+        </div>
+        <div class="recent-sessions" id="recent-sessions">
+          <div class="recent-title">最近对比</div>
+          <div class="session-list" id="session-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+
+  <!-- ── 状态栏 ── -->
+  <div class="status-bar" role="status" aria-live="polite">
+    <div class="status-left">
+      <div class="status-item status-diff-summary">
+        <span class="status-label">差异</span>
+        <span class="status-chip chip-total" id="stat-chunks">12 块</span>
+        <span class="status-chip chip-added" id="stat-added">+8 行</span>
+        <span class="status-chip chip-deleted" id="stat-deleted">-4 行</span>
+        <span class="status-chip chip-modified" id="stat-modified">~4 行</span>
+      </div>
+    </div>
+    <div class="status-center">
+      <div class="status-item" id="status-computing" style="display:none">
+        <span class="spinner"></span>
+        <span>正在计算差异...</span>
+      </div>
+    </div>
+    <div class="status-right">
+      <div class="status-item">
+        <span class="status-label">算法</span>
+        <span class="status-value" id="stat-algo">Myers</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">耗时</span>
+        <span class="status-value" id="stat-time">12ms</span>
+      </div>
+      <div class="status-item cursor-pos" id="cursor-pos">
+        <span>行 <span id="cursor-line">1</span>, 列 <span id="cursor-col">1</span></span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app-shell -->
+
+<!-- ══════════════════════════════════════════════════
+     忽略规则面板 (浮层)
+══════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-ignore" style="display:none" role="dialog" aria-label="忽略规则设置" aria-modal="true">
+  <div class="panel ignore-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">差异忽略规则</h3>
+      <button class="panel-close" onclick="toggleIgnorePanel()" aria-label="关闭">×</button>
+    </div>
+    <div class="panel-body">
+      <div class="setting-group">
+        <div class="setting-title">空白符处理</div>
+        <label class="radio-option">
+          <input type="radio" name="ws" value="none"> 不忽略
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="ws" value="leading-trailing" checked> 忽略首尾空白
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="ws" value="all"> 忽略全部空白
+        </label>
+      </div>
+      <div class="setting-group">
+        <div class="setting-title">其他选项</div>
+        <label class="check-option">
+          <input type="checkbox" id="ign-case-panel"> 忽略大小写差异
+        </label>
+        <label class="check-option">
+          <input type="checkbox" id="ign-eol-panel" checked> 忽略行尾符差异（CRLF vs LF）
+        </label>
+        <label class="check-option">
+          <input type="checkbox" id="ign-comments"> 忽略注释行
+        </label>
+      </div>
+      <div class="setting-group">
+        <div class="setting-title">自定义正则忽略规则</div>
+        <div class="regex-list" id="regex-list">
+          <div class="regex-item">
+            <input type="text" class="regex-input" placeholder="例：^\s*#.*$" value="^\s*#.*$">
+            <button class="regex-remove" aria-label="删除规则">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="add-regex-btn" onclick="addRegexRule()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          添加规则
+        </button>
+      </div>
+      <div class="setting-group">
+        <div class="setting-title">差异算法</div>
+        <div class="algo-selector" role="group">
+          <label class="algo-opt">
+            <input type="radio" name="algo" value="myers" checked>
+            <div class="algo-card">
+              <div class="algo-name">Myers</div>
+              <div class="algo-desc">默认 / Git 同款</div>
+            </div>
+          </label>
+          <label class="algo-opt">
+            <input type="radio" name="algo" value="patience">
+            <div class="algo-card">
+              <div class="algo-name">Patience</div>
+              <div class="algo-desc">更清晰的上下文</div>
+            </div>
+          </label>
+          <label class="algo-opt">
+            <input type="radio" name="algo" value="histogram">
+            <div class="algo-card">
+              <div class="algo-name">Histogram</div>
+              <div class="algo-desc">改进型 Patience</div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn-secondary" onclick="resetIgnoreRules()">重置</button>
+      <button class="btn-primary" onclick="applyIgnoreRules()">应用</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     粘贴文本对话框
+══════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-paste" style="display:none" role="dialog" aria-label="粘贴文本对比" aria-modal="true">
+  <div class="panel paste-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">粘贴文本对比</h3>
+      <button class="panel-close" onclick="closePasteDialog()" aria-label="关闭">×</button>
+    </div>
+    <div class="panel-body paste-body">
+      <div class="paste-col">
+        <label class="paste-label">左侧文本</label>
+        <textarea id="paste-left" class="paste-textarea" placeholder="在此粘贴或输入原始文本..."></textarea>
+      </div>
+      <div class="paste-col">
+        <label class="paste-label">右侧文本</label>
+        <textarea id="paste-right" class="paste-textarea" placeholder="在此粘贴或输入修改后文本..."></textarea>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn-secondary" onclick="closePasteDialog()">取消</button>
+      <button class="btn-primary" onclick="comparePastedText()">开始对比</button>
+    </div>
+  </div>
+</div>
+
+<!-- 拖拽遮罩 -->
+<div class="drop-overlay" id="drop-overlay" style="display:none" aria-hidden="true">
+  <div class="drop-content">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <p>释放以打开文件</p>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

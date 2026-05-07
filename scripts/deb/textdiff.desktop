@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=TextDiff
+Comment=Professional text comparison tool
+Exec=/opt/textdiff/textdiff %F
+Icon=textdiff
+Type=Application
+Categories=Development;TextEditor;Utility;
+MimeType=text/plain;text/x-diff;text/x-patch;
+Terminal=false
+StartupNotify=true
+StartupWMClass=textdiff

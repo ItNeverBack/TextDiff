@@ -1,0 +1,8 @@
+{
+  "name": "@textdiff/main",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./out/index.js",
+  "types": "./src/index.ts"
+}

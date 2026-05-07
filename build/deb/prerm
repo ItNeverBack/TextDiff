@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+# Pre-removal script for textdiff
+
+# Remove symlink
+if [ -L /usr/bin/textdiff ]; then
+    rm -f /usr/bin/textdiff
+fi
+
+exit 0
