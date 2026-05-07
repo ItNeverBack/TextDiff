@@ -158,6 +158,38 @@ Remove-Item "dist/vx.x.x/builder-debug.yml" -Force -ErrorAction SilentlyContinue
 Remove-Item "dist/vx.x.x/latest.yml" -Force -ErrorAction SilentlyContinue
 ```
 
+### 7. 发布到 GitHub Release
+
+确保已安装并登录 GitHub CLI (`gh`)：
+
+```powershell
+gh auth status
+```
+
+如果未登录，执行：
+
+```powershell
+gh auth login
+```
+
+使用 `gh release create` 将构建产物上传到 GitHub Release：
+
+```powershell
+gh release create vx.x.x "dist/vx.x.x/TextDiff-x.x.x-win.tar.gz" "dist/vx.x.x/textdiff_x.x.x_amd64.deb" --title "TextDiff vx.x.x" --notes "TextDiff vx.x.x release."
+```
+
+> **注意**：
+> - 命令中的 `x.x.x` 需替换为实际版本号。
+> - 如果该 tag 尚不存在，`gh` 会自动在默认分支上创建对应的 Git tag。
+> - 如需添加更详细的 Release Notes，可使用 `--notes-file <文件路径>` 从文件读取。
+> - 上传较大文件（>100MB）时可能需要较长时间，请耐心等待。
+
+发布成功后，可在以下地址查看：
+
+```
+https://github.com/ItNeverBack/TextDiff/releases/tag/vx.x.x
+```
+
 ---
 
 ## 最终产物

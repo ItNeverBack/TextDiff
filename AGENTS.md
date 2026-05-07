@@ -24,13 +24,14 @@ Core implementation complete — diff engine (Myers/Patience/Histogram), CLI mod
 ```bash
 npm run dev          # start Electron + Vite dev server (hot reload)
 npm run build        # build all three targets (main, preload, renderer)
+npm run preview      # preview the built app (electron-vite preview)
 npm run typecheck    # tsc --noEmit across all packages
 npm run lint         # eslint . --ext .ts,.tsx
 npm run test         # vitest (uses vitest.config.ts defaults)
 npm run dist         # build + electron-builder → distributable package
 ```
 
-No separate per-package scripts. All commands run from the repo root.
+Additional scripts: `postinstall` runs `electron-builder install-app-deps`, `start` aliases `preview`.
 
 ## Testing
 
@@ -132,6 +133,7 @@ describe('Myers Diff Algorithm', () => {
 | Directory Stats | `directory/__tests__/stats.test.ts` | ✅ Statistics computation |
 | Directory Integration | `directory/__tests__/integration.test.ts` | ✅ Full directory pipeline |
 | Directory Performance | `directory/__tests__/performance.test.ts` | ✅ Directory performance |
+| Debug Test Files | `directory/__tests__/debug-testtxt.test.ts` | ✅ Debug/diagnostic test |
 | Sync Plan | `directory/__tests__/sync-plan.unit.test.ts` | ✅ Sync plan generation |
 | Sync Integration | `directory/__tests__/sync.integration.test.ts` | ✅ Sync execution |
 | Worker Pool | `directory/worker/__tests__/pool.test.ts` | ✅ Worker thread pool |
@@ -500,15 +502,15 @@ packages/
 │   ├── features/          # Feature modules
 │   │   ├── diff-view/     # Diff visualization
 │   │   │   ├── index.tsx
-│   │   │   ├── components/ # SplitDiffView, UnifiedDiffView, MonacoDiffEditor, DiffLine, InlineDiff, DiffNavigator, Minimap, FoldedLine, FileInfoBar, etc.
-│   │   │   ├── hooks/     # useDiff, useDiffNavigation, useFolding, useSyncScroll
+│   │   │   ├── components/ # SplitDiffView, UnifiedDiffView, MonacoDiffEditor, DiffLine, InlineDiff, DiffNavigator, Minimap, FoldedLine, FileInfoBar, DiffEditorPane, etc.
+│   │   │   ├── hooks/     # useDiff, useDiffNavigation, useFolding, useSyncScroll (also exports useProportionalScroll)
 │   │   │   ├── monaco-theme.ts
 │   │   │   └── monaco-worker.ts
 │   │   ├── directory/     # Directory comparison view
 │   │   │   ├── DirectoryView.tsx
 │   │   │   ├── DirectoryWelcomeView.tsx
 │   │   │   ├── index.ts
-│   │   │   ├── components/ # ActionToolbar, ContextMenu, DiffPreviewDrawer, DiffPreviewPanel, DirectoryFilterBar, DirectoryHeader, DirectoryLegend, DirectoryStats, DirectoryTreePanel, ExportDialog, FileIcon, FilterBar, SyncConfirmDialog, SyncProgress, TreeNode
+│   │   │   ├── components/ # ActionToolbar, ContextMenu, DiffPreviewDrawer, DiffPreviewPanel, DirectoryFilterBar, DirectoryHeader, DirectoryLegend, DirectoryStats, DirectoryTreePanel, DirectoryTree, ExportDialog, FileIcon, FilterBar, SyncConfirmDialog, SyncProgress, TreeNode
 │   │   │   ├── hooks/     # useDirectoryCompare, useTreeExpand, useDirectoryShortcuts, useFileDiff
 │   │   │   └── styles/    # directory.css
 │   │   ├── merge/         # Three-way merge
