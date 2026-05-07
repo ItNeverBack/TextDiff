@@ -32,47 +32,18 @@ extraResources:
 # Windows 配置
 win:
   target:
-    - target: nsis
-      arch:
-        - x64
-        - ia32
-    - target: portable
+    - target: tar.gz
       arch:
         - x64
   publisherName: TextDiff Team
   legalTrademarks: Copyright © 2026 TextDiff Team
 
-# NSIS 安装程序配置
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
-  shortcutName: TextDiff
-  artifactName: "${name}-${version}-setup-${arch}.${ext}"
-
-# 便携版配置
-portable:
-  artifactName: "${name}-${version}-portable-${arch}.${ext}"
-
 # Linux 配置
 linux:
   target:
-    - target: AppImage
-      arch:
-        - x64
-        - arm64
     - target: deb
       arch:
         - x64
-        - arm64
-    - target: rpm
-      arch:
-        - x64
-    - target: tar.gz
-      arch:
-        - x64
-        - arm64
   category: Development
   maintainer: TextDiff Team
   vendor: TextDiff
@@ -85,37 +56,6 @@ linux:
     MimeType: text/plain;
     Icon: textdiff
     Terminal: false
-
-# AppImage 配置
-appImage:
-  artifactName: "${name}-${version}-${arch}.${ext}"
-
-# deb 配置
-deb:
-  priority: optional
-  depends:
-    - libgtk-3-0
-    - libnotify4
-    - libnss3
-    - libxss1
-    - libxtst6
-    - xdg-utils
-    - libatspi2.0-0
-    - libuuid1
-    - libsecret-1-0
-
-# rpm 配置
-rpm:
-  depends:
-    - gtk3
-    - libnotify
-    - nss
-    - libXScrnSaver
-    - libXtst
-    - xdg-utils
-    - at-spi2-core
-    - libuuid
-    - libsecret
 
 # 协议和文件关联
 protocols:
@@ -134,8 +74,8 @@ fileAssociations:
 # 发布配置
 publish:
   provider: github
-  owner: textdiff
-  repo: textdiff
+  owner: ItNeverBack
+  repo: TextDiff
 
 # 压缩配置
 compression: maximum
