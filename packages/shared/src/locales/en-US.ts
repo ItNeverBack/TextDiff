@@ -26,6 +26,7 @@ export const enUS: TranslationDictionary = {
   'menu.tools': 'Tools',
   'menu.help': 'Help',
   'menu.file.openPair': 'Open File Pair...',
+  'menu.file.openDirectoryPair': 'Open Directory Pair...',
   'menu.file.openLeft': 'Open Left File',
   'menu.file.openRight': 'Open Right File',
   'menu.file.pasteText': 'Paste Text to Compare',
@@ -50,6 +51,7 @@ export const enUS: TranslationDictionary = {
 
   // Toolbar
   'toolbar.openPair': 'Open File Pair',
+  'toolbar.openDirectoryPair': 'Open Directory Pair',
   'toolbar.openLeft': 'Left File',
   'toolbar.openRight': 'Right File',
   'toolbar.ignore': 'Ignore:',
@@ -267,4 +269,15 @@ export const enUS: TranslationDictionary = {
   'shortcuts.group.other': 'Other',
   'shortcuts.hint': 'Tip: Press Escape to close this dialog',
   'shortcuts.available': 'Available keyboard shortcuts:',
+
+  // Unsaved Changes
+  'dialog.unsaved.title': 'Unsaved Changes',
+  'dialog.unsaved.message': 'The following session has unsaved changes:',
+  'dialog.unsaved.remaining': '{count} more session(s) with unsaved changes',
+  'dialog.unsaved.save': 'Save',
+  'dialog.unsaved.discard': "Don't Save",
+  'dialog.unsaved.saveAll': 'Save All',
+  'dialog.unsaved.discardAll': "Don't Save All",
+  'dialog.unsaved.batchMessage': '{count} session(s) have unsaved changes.',
+  'dialog.unsaved.applyToAll': 'Apply the same choice to all {count} unsaved sessions'
 }

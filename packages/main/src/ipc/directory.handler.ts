@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, BrowserWindow } from 'electron'
 import * as path from 'path'
 import type {
   DirectoryDiffEntry,
@@ -157,8 +157,9 @@ export function registerDirectoryHandlers(): void {
   let lastDirectoryParent: string | undefined
 
   // 打开目录选择对话框
-  ipcMain.handle('directory:open', async (_event, side: 'left' | 'right'): Promise<string | null> => {
-    const result = await dialog.showOpenDialog({
+  ipcMain.handle('directory:open', async (event, side: 'left' | 'right'): Promise<string | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)!
+    const result = await dialog.showOpenDialog(win, {
       title: side === 'left' ? '选择左侧目录' : '选择右侧目录',
       defaultPath: lastDirectoryParent,
       properties: ['openDirectory']

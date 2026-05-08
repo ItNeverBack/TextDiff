@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import type {
   DirectoryComparison,
@@ -34,19 +34,18 @@ export function registerReportHandlers(): void {
 
   // 保存报告
   ipcMain.handle('report:save', async (
-    _event,
+    event,
     content: string,
     format: ReportFormat,
     defaultFileName?: string
   ): Promise<{ success: boolean; filePath?: string; error?: string }> => {
     try {
-      // 确定文件扩展名
       const extension = getFileExtension(format)
       const fileName = defaultFileName || `comparison-report-${Date.now()}`
       const fullFileName = `${fileName}.${extension}`
 
-      // 显示保存对话框
-      const result = await dialog.showSaveDialog({
+      const win = BrowserWindow.fromWebContents(event.sender)!
+      const result = await dialog.showSaveDialog(win, {
         title: '保存对比报告',
         defaultPath: fullFileName,
         filters: getFileFilters(format)
@@ -70,17 +69,16 @@ export function registerReportHandlers(): void {
 
   // 生成并保存报告（一步完成）
   ipcMain.handle('report:generateAndSave', async (
-    _event,
+    event,
     comparison: DirectoryComparison,
     options?: Partial<ReportOptions>
   ): Promise<{ success: boolean; filePath?: string; error?: string }> => {
     try {
-      // 生成报告内容
       const mergedOptions = { ...DEFAULT_REPORT_OPTIONS, ...options }
       const content = generateReport(comparison, mergedOptions)
+      const win = BrowserWindow.fromWebContents(event.sender)!
 
-      // 保存报告
-      return await saveReport(content, mergedOptions.format, comparison.id)
+      return await saveReport(content, mergedOptions.format, comparison.id, win)
     } catch (error) {
       return {
         success: false,
@@ -158,13 +156,14 @@ function getFileFilters(format: ReportFormat) {
 async function saveReport(
   content: string,
   format: ReportFormat,
-  comparisonId?: string
+  comparisonId?: string,
+  parentWindow?: InstanceType<typeof BrowserWindow> | null
 ): Promise<{ success: boolean; filePath?: string; error?: string }> {
   try {
     const extension = getFileExtension(format)
     const fileName = `comparison-report-${comparisonId || Date.now()}.${extension}`
 
-    const result = await dialog.showSaveDialog({
+    const result = await dialog.showSaveDialog(parentWindow!, {
       title: '保存对比报告',
       defaultPath: fileName,
       filters: getFileFilters(format)

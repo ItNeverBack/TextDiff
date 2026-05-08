@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import type { DiffChunk, DiffLine, FileInfo, DiffResult, DiffStats } from '@shared/types'
 import type { SyncDirection, SyncDiffResult } from '@shared/types/ipc.types'
 import { api } from '@renderer/lib/api'
-import { useHistoryStore, useTabStore } from '@renderer/stores'
+import { useHistoryStore, useTabStore, useDiffStore } from '@renderer/stores'
 
 export interface UseSyncDiffOptions {
   leftFile: FileInfo | null
@@ -146,17 +146,13 @@ export function useSyncDiff({
 
   const { updateActiveTabContent } = useTabStore()
   const { addEntry } = useHistoryStore()
+  const { setLeftFile, setRightFile } = useDiffStore()
 
   const syncChunk = useCallback(async (
     direction: SyncDirection,
     chunkId?: string
   ) => {
     if (!leftFile || !rightFile || !diffResult || diffResult.chunks.length === 0) {
-      return
-    }
-
-    // 确保路径不为 null
-    if (!leftFile.path || !rightFile.path) {
       return
     }
 
@@ -189,9 +185,11 @@ export function useSyncDiff({
       }
 
       // 调用主进程 API 进行同步
+      // 粘贴文本时 path 为 null，传空字符串并禁用 autoSave（无文件可写）
+      const hasPaths = !!leftFile.path && !!rightFile.path
       const result = await api.syncDiff(
-        leftFile.path,
-        rightFile.path,
+        leftFile.path ?? '',
+        rightFile.path ?? '',
         leftFile.content,
         rightFile.content,
         diffResult.lines,
@@ -199,7 +197,7 @@ export function useSyncDiff({
         {
           direction,
           chunkIds: [targetChunkId],
-          autoSave: true // 自动保存
+          autoSave: hasPaths // 只有真实文件才自动保存
         }
       )
 
@@ -210,8 +208,12 @@ export function useSyncDiff({
       // 更新前端状态
       if (direction === 'left-to-right') {
         updateActiveTabContent('right', result.rightContent)
+        // 同步更新 diff store（粘贴文本无路径时内容只在内存中）
+        setRightFile({ ...rightFile, content: result.rightContent })
       } else {
         updateActiveTabContent('left', result.leftContent)
+        // 同步更新 diff store（粘贴文本无路径时内容只在内存中）
+        setLeftFile({ ...leftFile, content: result.leftContent })
       }
 
       // 直接更新 diff 结果，避免重新计算
@@ -243,7 +245,7 @@ export function useSyncDiff({
     } finally {
       setIsSyncing(false)
     }
-  }, [leftFile, rightFile, diffResult, activeChunkIndex, updateActiveTabContent, addEntry, onSyncComplete, onSyncError])
+  }, [leftFile, rightFile, diffResult, activeChunkIndex, updateActiveTabContent, addEntry, setLeftFile, setRightFile, onSyncComplete, onSyncError])
 
   return {
     syncChunk,

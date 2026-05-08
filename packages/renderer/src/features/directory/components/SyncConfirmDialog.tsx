@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import type {
   SyncPlan,
-  SyncOperation,
-  SyncAction,
-  DiffStatus
+  SyncAction
 } from '@shared/types'
 import { STATUS_COLORS } from '@shared/types'
 

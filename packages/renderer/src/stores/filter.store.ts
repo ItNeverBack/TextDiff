@@ -4,10 +4,7 @@ import type {
   DirectoryFilter,
   ExtensionFilter,
   GlobFilter,
-  RegexFilter,
-  SizeFilter,
-  DateFilter,
-  FilterType
+  RegexFilter
 } from '@shared/types/directory.types';
 import { generateId } from '@shared/utils/id';
 
@@ -106,7 +103,7 @@ export const COMMON_FILTER_PRESETS: FilterPreset[] = [
         invert: false,
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.vue', '.py', '.java', '.cpp', '.c', '.h', '.go', '.rs'],
         caseSensitive: false
-      }
+      } as Omit<ExtensionFilter, 'id'>
     ]
   },
   {
@@ -118,7 +115,7 @@ export const COMMON_FILTER_PRESETS: FilterPreset[] = [
         enabled: true,
         invert: true,
         patterns: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.idea/**', '**/.vscode/**']
-      }
+      } as Omit<GlobFilter, 'id'>
     ]
   },
   {
@@ -135,7 +132,7 @@ export const COMMON_FILTER_PRESETS: FilterPreset[] = [
         enabled: true,
         invert: false,
         minSize: 1024 * 1024 // 1MB
-      }
+      } as Omit<DirectoryFilter, 'id'>
     ]
   }
 ];
@@ -144,7 +141,7 @@ export const COMMON_FILTER_PRESETS: FilterPreset[] = [
 // 创建 Store
 // ============================================
 export const useFilterStore = create<FilterState & FilterActions>()(
-  immer((set, get) => ({
+  immer((set, _get) => ({
     // 初始状态
     filters: [],
     searchQuery: '',
@@ -169,7 +166,7 @@ export const useFilterStore = create<FilterState & FilterActions>()(
         state.filters.push({
           ...filter,
           id: generateId()
-        });
+        } as DirectoryFilter);
       });
     },
 
@@ -177,7 +174,7 @@ export const useFilterStore = create<FilterState & FilterActions>()(
       set(state => {
         const index = state.filters.findIndex(f => f.id === id);
         if (index !== -1) {
-          state.filters[index] = { ...state.filters[index], ...updates };
+          state.filters[index] = { ...state.filters[index], ...updates } as DirectoryFilter;
         }
       });
     },
@@ -381,7 +378,7 @@ export const useFilterStore = create<FilterState & FilterActions>()(
         state.filters = preset.filters.map(f => ({
           ...f,
           id: generateId()
-        }));
+        } as DirectoryFilter));
         if (preset.searchQuery !== undefined) {
           state.searchQuery = preset.searchQuery;
         }

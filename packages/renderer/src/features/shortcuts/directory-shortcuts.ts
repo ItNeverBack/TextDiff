@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react'
-import { useDirectoryStore } from '../../stores/directory.store'
+import { useDirectoryCompareStore } from '../../stores/directory.store'
 
 /**
  * 目录对比专用快捷键 Hook
@@ -30,12 +30,10 @@ export interface DirectoryShortcutsOptions {
 export function useDirectoryShortcuts(options: DirectoryShortcutsOptions = {}) {
   const {
     selectedEntry,
-    toggleExpand,
-    setSelectedEntry,
-    entries,
-    expandedPaths,
-    compareDirectories
-  } = useDirectoryStore()
+    toggleExpand
+  } = useDirectoryCompareStore()
+
+
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // 如果正在输入框中，不处理快捷键
@@ -122,7 +120,8 @@ export function useDirectoryShortcuts(options: DirectoryShortcutsOptions = {}) {
  * 目录导航辅助函数
  */
 export function useDirectoryNavigation() {
-  const { entries, selectedEntry, setSelectedEntry, expandedPaths } = useDirectoryStore()
+  const { comparison, selectedEntry, selectEntry: setSelectedEntry, expandedPaths } = useDirectoryCompareStore()
+  const entries = comparison?.entries ?? []
 
   const getVisibleEntries = useCallback(() => {
     const visible: typeof entries = []

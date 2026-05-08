@@ -2,10 +2,10 @@
  * FilterBar 组件
  * 目录对比过滤器工具栏
  */
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { cn } from '@renderer/lib/utils';
 import { useFilterStore, COMMON_FILTER_PRESETS } from '@renderer/stores/filter.store';
-import type { DirectoryFilter, ExtensionFilter, GlobFilter, RegexFilter } from '@shared/types/directory.types';
+import type { ExtensionFilter, GlobFilter, RegexFilter } from '@shared/types/directory.types';
 import { generateId } from '@shared/utils/id';
 
 // ============================================

@@ -15,6 +15,7 @@ export interface ActionToolbarProps {
   onExpandAll?: () => void;
   onCollapseAll?: () => void;
   onExpandToDiffs?: () => void;
+  onSwap?: () => void;
   onSync?: () => void;
   onExport?: () => void;
   canSync?: boolean;
@@ -30,6 +31,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
   onExpandAll,
   onCollapseAll,
   onExpandToDiffs,
+  onSwap,
   onSync,
   onExport,
   canSync = false,
@@ -38,7 +40,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
   className
 }) => {
   const store = useDirectoryCompareStore();
-  const { comparison, expandedPaths } = store;
+  const { comparison: _comparison, expandedPaths: _expandedPaths } = store;
 
   const viewModeLabels: Record<ViewMode, string> = {
     'all': '全部',
@@ -170,6 +172,25 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
 
       {/* 操作按钮 */}
       <div className="flex items-center gap-2">
+        {onSwap && (
+          <button
+            onClick={onSwap}
+            className={cn(
+              'px-3 py-1.5 rounded text-sm flex items-center gap-1.5',
+              'bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600',
+              'text-gray-700 dark:text-gray-300',
+              'hover:bg-gray-50 transition-colors'
+            )}
+            title="交换左右目录"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M7 16V4m0 0L3 8m4-4l4 4" />
+              <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+            交换
+          </button>
+        )}
+
         {onExport && (
           <button
             onClick={onExport}

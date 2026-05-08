@@ -22,6 +22,9 @@ declare global {
         chunks: DiffChunk[],
         options: SyncDiffOptions
       ) => Promise<SyncDiffResult>
+      // 未保存更改确认
+      onCheckUnsaved: (callback: () => void) => () => void
+      confirmClose: () => void
     }
   }
 }

@@ -87,6 +87,9 @@ interface ExtendedTextDiffAPI extends TextDiffAPI {
   setLanguage: (language: Language) => Promise<void>
   // 同步进度监听
   onSyncProgress: (callback: (progress: SyncProgress & { syncId: string }) => void) => () => void
+  // 未保存更改确认
+  onCheckUnsaved: (callback: () => void) => () => void
+  confirmClose: () => void
 }
 
 const textDiffApi: ExtendedTextDiffAPI = {
@@ -282,6 +285,19 @@ const textDiffApi: ExtendedTextDiffAPI = {
   // 语言切换
   setLanguage: (language: Language) =>
     invoke<void>('app:setLanguage', language),
+
+  // 未保存更改确认
+  onCheckUnsaved: (callback: () => void) => {
+    const handler = () => {
+      callback()
+    }
+    ipcRenderer.on('app:check-unsaved', handler)
+    return () => ipcRenderer.off('app:check-unsaved', handler)
+  },
+
+  confirmClose: () => {
+    send('app:close-confirmed')
+  },
 
   // 差异同步
   syncDiff: (leftPath: string, rightPath: string, leftContent: string, rightContent: string, lines: DiffLine[], chunks: DiffChunk[], options: SyncDiffOptions) =>

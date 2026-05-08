@@ -4,13 +4,12 @@ import { createHash } from 'crypto'
 import type { DirTreeNode, FileMetadata, DirCompareOptions } from '@shared/types'
 import { DEFAULT_EXCLUDE_PATTERNS, shouldExcludePath } from './filter'
 import { getScanWorkerPool, getHashWorkerPool } from './worker/pool'
-import { getCacheManager, DirectoryCacheManager } from './cache'
-import { IncrementalScanner, incrementalScan } from './incremental'
+import { getCacheManager } from './cache'
+import { incrementalScan } from './incremental'
 
 // Worker 池启用阈值 - 根据设计文档 §4.2 性能优化策略
 const WORKER_THRESHOLD = 1000 // 文件数超过此值启用 Worker
 const LARGE_DIR_THRESHOLD = 100 // 子目录数超过此值启用并行扫描
-const LARGE_FILE_SIZE = 10 * 1024 * 1024 // 10MB 以上使用 Worker 计算哈希
 
 /**
  * 扫描进度回调
@@ -183,7 +182,7 @@ export async function scanDirectory(
 /**
  * 估算文件数量
  */
-async function estimateFileCount(rootPath: string, options: DirCompareOptions): Promise<number> {
+async function estimateFileCount(rootPath: string, _options: DirCompareOptions): Promise<number> {
   try {
     const entries = await fs.promises.readdir(rootPath)
     let count = 0

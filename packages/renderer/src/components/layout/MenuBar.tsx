@@ -12,14 +12,15 @@ interface MenuBarProps {
   onShowShortcuts?: () => void
   onShowMergeView?: () => void
   onShowDirectoryView?: () => void
+  onOpenDirectoryPair?: () => void
   onSetSplitView?: () => void
   onSetUnifiedView?: () => void
 }
 
-export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory, onShowSettings, onShowShortcuts, onShowMergeView, onShowDirectoryView, onSetSplitView, onSetUnifiedView }: MenuBarProps) {
+export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory, onShowSettings, onShowShortcuts, onShowMergeView, onShowDirectoryView: _onShowDirectoryView, onOpenDirectoryPair, onSetSplitView, onSetUnifiedView }: MenuBarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles, swapActiveTabFiles } = useTabStore()
-  const { setLeftFile, setRightFile, swapFiles, toggleCollapse } = useDiffStore()
+  const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles } = useTabStore()
+  const { setLeftFile, setRightFile, toggleCollapse } = useDiffStore()
   const { t } = useI18n()
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const menuBarRef = useRef<HTMLDivElement>(null)
@@ -38,7 +39,7 @@ export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [activeMenu])
 
-  const handleOpenFile = async (side: 'left' | 'right' | 'both') => {
+  const handleOpenFile = async (side: 'both') => {
     try {
       let leftFile: Awaited<ReturnType<typeof api.openFile>> = null
       let rightFile: Awaited<ReturnType<typeof api.openFile>> = null
@@ -63,24 +64,6 @@ export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory
 
         // 两侧都选择成功，统一更新
         setActiveTabFiles(leftFile, rightFile)
-      } else if (side === 'left') {
-        leftFile = await api.openFile('left')
-        if (leftFile) {
-          setLeftFile(leftFile)
-          // 从当前标签页获取右侧文件状态（而非 diffStore），确保新对比是独立的
-          const { tabs: currentTabs, activeIndex: currentIndex } = useTabStore.getState()
-          const currentTab = currentTabs[currentIndex]
-          setActiveTabFiles(leftFile, currentTab?.rightFile ?? null)
-        }
-      } else if (side === 'right') {
-        rightFile = await api.openFile('right')
-        if (rightFile) {
-          setRightFile(rightFile)
-          // 从当前标签页获取左侧文件状态（而非 diffStore），确保新对比是独立的
-          const { tabs: currentTabs, activeIndex: currentIndex } = useTabStore.getState()
-          const currentTab = currentTabs[currentIndex]
-          setActiveTabFiles(currentTab?.leftFile ?? null, rightFile)
-        }
       }
     } catch (error) {
       console.error('Failed to open file:', error)
@@ -110,13 +93,9 @@ export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory
               <span className="menu-label">{t('menu.file.openPair')}</span>
               <span className="menu-shortcut">Ctrl+O</span>
             </div>
-            <div className="menu-dropdown-item" onClick={() => handleOpenFile('left')}>
-              <span className="menu-label">{t('menu.file.openLeft')}</span>
-              <span className="menu-shortcut">Ctrl+L</span>
-            </div>
-            <div className="menu-dropdown-item" onClick={() => handleOpenFile('right')}>
-              <span className="menu-label">{t('menu.file.openRight')}</span>
-              <span className="menu-shortcut">Ctrl+R</span>
+            <div className="menu-dropdown-item" onClick={() => { onOpenDirectoryPair?.(); setActiveMenu(null); }}>
+              <span className="menu-label">{t('menu.file.openDirectoryPair')}</span>
+              <span className="menu-shortcut">Ctrl+Shift+D</span>
             </div>
             <div className="menu-divider" />
             <div className="menu-dropdown-item" onClick={() => { onPasteDialog(); setActiveMenu(null); }}>
@@ -124,10 +103,6 @@ export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory
               <span className="menu-shortcut">Ctrl+Shift+V</span>
             </div>
             <div className="menu-divider" />
-            <div className="menu-dropdown-item" onClick={() => { onShowDirectoryView?.(); setActiveMenu(null); }}>
-              <span className="menu-label">{t('menu.file.directoryCompare')}</span>
-              <span className="menu-shortcut">Ctrl+Shift+D</span>
-            </div>
             <div className="menu-dropdown-item" onClick={() => { onShowMergeView?.(); setActiveMenu(null); }}>
               <span className="menu-label">{t('menu.file.mergeView')}</span>
               <span className="menu-shortcut">Ctrl+Shift+M</span>
@@ -146,10 +121,6 @@ export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory
         >
           <span>{t('menu.edit')}</span>
           <div className="menu-dropdown">
-            <div className="menu-dropdown-item" onClick={() => { swapFiles(); swapActiveTabFiles(); setActiveMenu(null); }}>
-              <span className="menu-label">{t('menu.edit.swapFiles')}</span>
-            </div>
-            <div className="menu-divider" />
             <div className="menu-dropdown-item" onClick={() => { toggleCollapse(); setActiveMenu(null); }}>
               <span className="menu-label">{t('menu.edit.collapseUnchanged')}</span>
               <span className="menu-shortcut">Ctrl+Shift+C</span>

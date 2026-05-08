@@ -79,9 +79,9 @@ async function handleHashTask(task: { id: string; payload: unknown }): Promise<v
     const hash = createHash(algorithm);
     const stream = fs.createReadStream(filePath, { highWaterMark: chunkSize });
 
-    stream.on('data', (chunk: Buffer) => {
+    stream.on('data', (chunk: Buffer | string) => {
       hash.update(chunk);
-      processedSize += chunk.length;
+      processedSize += typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.length;
 
       // 发送进度（每 10% 或每 1MB）
       if (totalSize > 0) {

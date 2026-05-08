@@ -1,9 +1,21 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTabStore, useDiffStore } from '../../stores'
 
-export function TabBar() {
+interface TabBarProps {
+  onCloseTab?: (index: number) => void
+}
+
+export function TabBar({ onCloseTab }: TabBarProps) {
   const { tabs, activeIndex, selectTab, closeTab, addTab } = useTabStore()
   const { setLeftFile, setRightFile, setDiffResult, setViewMode } = useDiffStore()
+  const tabBarRef = useRef<HTMLDivElement>(null)
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY !== 0 && tabBarRef.current) {
+      e.preventDefault()
+      tabBarRef.current.scrollLeft += e.deltaY
+    }
+  }
 
   // 当活跃标签页变化时，同步 diffStore 状态
   useEffect(() => {
@@ -15,6 +27,8 @@ export function TabBar() {
       // 根据标签类型设置视图模式
       if (activeTab.isDirectoryView) {
         setViewMode('directory')
+      } else if (activeTab.isMergeView) {
+        setViewMode('merge')
       } else {
         setViewMode('split')
       }
@@ -22,7 +36,7 @@ export function TabBar() {
   }, [activeIndex, tabs, setLeftFile, setRightFile, setDiffResult, setViewMode])
 
   return (
-    <div className="tab-bar">
+    <div className="tab-bar" ref={tabBarRef} onWheel={handleWheel}>
       {tabs.map((tab, index) => (
         <div
           key={tab.id}
@@ -33,6 +47,9 @@ export function TabBar() {
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           </svg>
           <span className="tab-title">{tab.title}</span>
+          {tab.isDirty && (
+            <span className="tab-dirty-indicator" title="未保存的更改">●</span>
+          )}
           {tab.diffResult && (
             <span className="tab-badge">{tab.diffResult.stats.chunkCount}</span>
           )}
@@ -41,7 +58,11 @@ export function TabBar() {
               className="tab-close"
               onClick={(e) => {
                 e.stopPropagation()
-                closeTab(index)
+                if (onCloseTab) {
+                  onCloseTab(index)
+                } else {
+                  closeTab(index)
+                }
               }}
             >
               ×

@@ -219,8 +219,6 @@ export class DirectoryCacheManager {
       if (currentMemory <= targetMemory) break;
 
       // 计算此缓存的内存占用
-      const cacheMemory = cache.entries.size * 200;
-
       // 如果缓存较旧，清理单个条目
       const entriesArray = Array.from(cache.entries.entries())
         .sort((a, b) => a[1].cachedAt - b[1].cachedAt);

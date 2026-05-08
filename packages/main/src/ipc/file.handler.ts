@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, BrowserWindow } from 'electron'
 import type { FileInfo } from '@shared/types'
 import { readFile, writeFile } from '../fs'
 import { recentFilesRepository } from '../session'
@@ -8,8 +8,9 @@ import { watchFile } from '../fs/watcher'
 const activeWatchers = new Map<string, () => void>()
 
 export function registerFileHandlers(): void {
-  ipcMain.handle('file:open', async (_event, side: 'left' | 'right'): Promise<FileInfo | null> => {
-    const result = await dialog.showOpenDialog({
+  ipcMain.handle('file:open', async (event, side: 'left' | 'right'): Promise<FileInfo | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)!
+    const result = await dialog.showOpenDialog(win, {
       title: side === 'left' ? '打开左侧文件' : '打开右侧文件',
       properties: ['openFile'],
       filters: [

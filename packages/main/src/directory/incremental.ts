@@ -57,7 +57,6 @@ export class IncrementalScanner {
     options: DirCompareOptions,
     previousCache?: DirectoryCache
   ): Promise<IncrementalScanResult> {
-    const startTime = Date.now();
     const result: IncrementalScanResult = {
       changes: [],
       added: [],
@@ -107,7 +106,6 @@ export class IncrementalScanner {
     }
 
     // 估算节省时间
-    const totalEntries = currentEntries.length;
     const cachedEntries = result.unchanged.length;
     const scanTimePerEntry = 5; // 估算每个条目扫描需要 5ms
     result.timeSaved = cachedEntries * scanTimePerEntry;
@@ -276,7 +274,6 @@ export function mergeWithCache(
   unchangedPaths: string[],
   cache: DirectoryCache
 ): DirTreeNode[] {
-  const entries: DirTreeNode[] = [];
   const entryMap = new Map<string, DirTreeNode>();
 
   // 处理未变更的条目（从缓存恢复）

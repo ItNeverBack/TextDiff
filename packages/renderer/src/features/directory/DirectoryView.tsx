@@ -56,7 +56,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({ className }) => {
 
   // Tab 操作
   const { addTabWithFiles, activeIndex, updateTab } = useTabStore();
-  const { expandedPaths } = useDirectoryCompareStore();
+  const { expandedPaths, swapDirectories } = useDirectoryCompareStore();
 
   // 将目录对比状态保存到当前 tab
   useEffect(() => {
@@ -120,6 +120,12 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({ className }) => {
       expandToDiffs(comparison.entries);
     }
   }, [comparison, expandToDiffs]);
+
+  // 处理交换左右目录
+  const handleSwap = useCallback(async () => {
+    if (!comparison) return;
+    await swapDirectories();
+  }, [comparison, swapDirectories]);
 
   // 处理同步 - 打开同步确认对话框
   const handleSync = useCallback(async () => {
@@ -374,6 +380,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({ className }) => {
         onExpandAll={expandAll}
         onCollapseAll={collapseAll}
         onExpandToDiffs={handleExpandToDiffs}
+        onSwap={handleSwap}
         onSync={handleSync}
         onExport={handleExport}
         canSync={hasDifferences}
@@ -456,7 +463,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({ className }) => {
       <SyncConfirmDialog
         isOpen={showSyncDialog}
         plan={syncPlan}
-        strategy={syncStrategy}
+        strategy={syncStrategy as 'left-to-right' | 'right-to-left' | 'bidirectional'}
         onClose={handleCancelSync}
         onConfirm={handleExecuteSync}
         onCancel={handleCancelSync}

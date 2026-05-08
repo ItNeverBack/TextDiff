@@ -3,11 +3,8 @@ import { immer } from 'zustand/middleware/immer';
 import type {
   DirectoryComparison,
   DirectoryDiffEntry,
-  DirDiffStatistics,
   DirCompareOptions,
-  DirectoryInfo,
-  ComparisonProgress,
-  DiffStatus
+  ComparisonProgress
 } from '@shared/types/directory.types';
 import { DEFAULT_DIR_COMPARE_OPTIONS } from '@shared/types/directory.types';
 
@@ -73,6 +70,9 @@ export interface DirectoryCompareActions {
 
   // 刷新
   refreshComparison: () => Promise<void>;
+
+  // 交换左右目录
+  swapDirectories: () => Promise<void>;
 }
 
 // ============================================
@@ -419,6 +419,20 @@ export const useDirectoryCompareStore = create<DirectoryCompareState & Directory
       await startComparison(
         comparison.leftRoot.path,
         comparison.rightRoot.path,
+        comparison.options
+      );
+    },
+
+    // ============================================
+    // 交换左右目录
+    // ============================================
+    swapDirectories: async () => {
+      const { comparison, startComparison } = get();
+      if (!comparison) return;
+
+      await startComparison(
+        comparison.rightRoot.path,
+        comparison.leftRoot.path,
         comparison.options
       );
     }

@@ -12,7 +12,9 @@ export interface TabInfo {
   rightFile: FileInfo | null
   diffResult: DiffResult | null
   hasChanges: boolean
+  isDirty: boolean
   isDirectoryView?: boolean
+  isMergeView?: boolean
   // 目录对比相关字段
   directoryComparison?: DirectoryComparison | null
   leftDirectory?: DirectoryInfo | null
@@ -33,6 +35,7 @@ interface TabActions {
   addTab: () => void
   addTabWithFiles: (left: FileInfo, right: FileInfo) => void
   addDirectoryTab: (leftPath: string, rightPath: string, comparison?: DirectoryComparison, options?: { startComparison?: boolean }) => void
+  addMergeTab: () => void
   closeTab: (index: number) => void
   selectTab: (index: number) => void
   updateTab: (index: number, updates: Partial<TabInfo>) => void
@@ -46,6 +49,9 @@ interface TabActions {
   swapActiveTabFiles: () => void
   updateActiveTabContent: (side: 'left' | 'right', content: string) => void
   markActiveTabAsSaved: () => void
+  markTabAsSaved: (index: number) => void
+  markTabAsNotDirty: (index: number) => void
+  getDirtyTabs: () => { index: number; tab: TabInfo }[]
   saveCurrentDirectoryState: () => void
   restoreDirectoryStateForTab: (index: number) => void
 }
@@ -56,7 +62,8 @@ const createNewTab = (): TabInfo => ({
   leftFile: null,
   rightFile: null,
   diffResult: null,
-  hasChanges: false
+  hasChanges: false,
+  isDirty: false
 })
 
 export const useTabStore = create<TabState & TabActions>((set, get) => ({
@@ -97,6 +104,7 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       rightFile: right,
       diffResult: null,
       hasChanges: false,
+      isDirty: false,
       isDirectoryView: false
     }
     set((state) => ({
@@ -131,6 +139,7 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       rightFile: null,
       diffResult: null,
       hasChanges: false,
+      isDirty: false,
       isDirectoryView: true,
       directoryComparison: comparison || null,
       dirViewMode: 'all',
@@ -155,6 +164,37 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       const { clearComparison } = useDirectoryCompareStore.getState()
       clearComparison()
     }
+  },
+
+  addMergeTab: () => {
+    // 保存当前 tab 的目录状态（如果是目录视图）
+    const { activeIndex, tabs } = get()
+    const currentTab = tabs[activeIndex]
+    if (currentTab?.isDirectoryView) {
+      get().saveCurrentDirectoryState()
+    }
+
+    const newTab: TabInfo = {
+      id: generateSessionId(),
+      title: '三路合并',
+      leftFile: null,
+      rightFile: null,
+      diffResult: null,
+      hasChanges: false,
+      isDirty: false,
+      isMergeView: true
+    }
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeIndex: state.tabs.length
+    }))
+    // 切换到合并视图模式
+    const { reset, setViewMode } = useDiffStore.getState()
+    reset()
+    setViewMode('merge')
+    // 清空目录对比状态
+    const { clearComparison } = useDirectoryCompareStore.getState()
+    clearComparison()
   },
 
   closeTab: (index) => {
@@ -196,7 +236,8 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       const { setLeftFile, setRightFile, setViewMode } = useDiffStore.getState()
       setLeftFile(newTab.leftFile)
       setRightFile(newTab.rightFile)
-      setViewMode(newTab.isDirectoryView ? 'directory' : 'split')
+      const resolvedMode = newTab.isDirectoryView ? 'directory' : newTab.isMergeView ? 'merge' : 'split'
+      setViewMode(resolvedMode)
     }
   },
 
@@ -227,7 +268,8 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       if (newTab) {
         setLeftFile(newTab.leftFile)
         setRightFile(newTab.rightFile)
-        setViewMode(newTab.isDirectoryView ? 'directory' : 'split')
+        const resolvedMode = newTab.isDirectoryView ? 'directory' : newTab.isMergeView ? 'merge' : 'split'
+        setViewMode(resolvedMode)
       }
     }
   },
@@ -266,6 +308,11 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
           : tab
       )
     })
+
+    // 同步更新 diff store，与 selectTab/closeTab 保持一致
+    const { setLeftFile, setRightFile } = useDiffStore.getState()
+    setLeftFile(left)
+    setRightFile(right)
   },
 
   setActiveTabDiffResult: (result) => {
@@ -419,7 +466,8 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
           ? { 
               ...tab, 
               [fileKey]: { ...currentFile, content },
-              hasChanges: true 
+              hasChanges: true,
+              isDirty: true
             }
           : tab
       )
@@ -431,9 +479,38 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
     set({
       tabs: tabs.map((tab, i) =>
         i === activeIndex 
-          ? { ...tab, hasChanges: false }
+          ? { ...tab, hasChanges: false, isDirty: false }
           : tab
       )
     })
+  },
+
+  markTabAsSaved: (index: number) => {
+    const { tabs } = get()
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === index 
+          ? { ...tab, hasChanges: false, isDirty: false }
+          : tab
+      )
+    })
+  },
+
+  markTabAsNotDirty: (index: number) => {
+    const { tabs } = get()
+    set({
+      tabs: tabs.map((tab, i) =>
+        i === index 
+          ? { ...tab, isDirty: false }
+          : tab
+      )
+    })
+  },
+
+  getDirtyTabs: () => {
+    const { tabs } = get()
+    return tabs
+      .map((tab, index) => ({ index, tab }))
+      .filter(({ tab }) => tab.isDirty && !tab.isDirectoryView && (tab.leftFile?.path || tab.rightFile?.path))
   }
 }))

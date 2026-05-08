@@ -62,6 +62,12 @@ export const MonacoDiffEditor = forwardRef<MonacoDiffEditorRef, MonacoDiffEditor
     const currentRightPathRef = useRef<string | null>(null)
     const isEditorUpdatingRef = useRef(false)
 
+    // §2.4.4 用 ref 跟踪最新的 isCollapsed 值，供初始化闭包内的回调读取
+    const isCollapsedRef = useRef(isCollapsed)
+    useEffect(() => {
+      isCollapsedRef.current = isCollapsed
+    })
+
     // §Week 12: 搜索高亮状态
     const { highlightedLineIndex, highlightedRanges, matches, currentMatchIndex } = useSearchStore()
 
@@ -138,8 +144,10 @@ export const MonacoDiffEditor = forwardRef<MonacoDiffEditorRef, MonacoDiffEditor
         diffWordWrap: 'off',
         useInlineViewWhenSpaceIsLimited: false,  // 始终使用双栏视图
         hideUnchangedRegions: {
-          enabled: false,  // 默认不隐藏未改变区域
-          contextLineCount: 3
+          enabled: isCollapsedRef.current,
+          revealLineCount: 3,
+          minimumLineCount: 0,
+          contextLineCount: 0
         },
         // §2.4.1 大文件虚拟滚动优化
         scrollbar: {
@@ -192,26 +200,8 @@ export const MonacoDiffEditor = forwardRef<MonacoDiffEditorRef, MonacoDiffEditor
         searchKeybindingsRef.current.push(modifiedSearchKeybinding)
       }
 
-      // 监听 diff 计算完成
       diffEditor.onDidUpdateDiff(() => {
-        const changes = diffEditor.getLineChanges()
-        console.log('[MonacoDiff] Diff computed:', changes?.length, 'changes')
-        if (changes) {
-          changes.forEach((change, i) => {
-            // Monaco diff 格式：当 end < start 时表示纯插入或纯删除
-            const originalCount = Math.max(0, change.originalEndLineNumber - change.originalStartLineNumber + 1)
-            const modifiedCount = Math.max(0, change.modifiedEndLineNumber - change.modifiedStartLineNumber + 1)
-            const changeType = originalCount === 0 ? 'insert' : modifiedCount === 0 ? 'delete' : 'modify'
-            console.log(`[MonacoDiff] Change ${i}:`, {
-              original: `${change.originalStartLineNumber}-${change.originalEndLineNumber} (${originalCount} lines)`,
-              modified: `${change.modifiedStartLineNumber}-${change.modifiedEndLineNumber} (${modifiedCount} lines)`,
-              type: changeType
-            })
-          })
-        }
-        if (changes && onChunkNavigate) {
-          // Monaco 的 diff 计算完成
-        }
+        // §2.4.4 diff 计算完成后由 useFolding hook 的 onDidUpdateDiff 处理折叠
       })
 
         return () => {
@@ -370,10 +360,10 @@ export const MonacoDiffEditor = forwardRef<MonacoDiffEditorRef, MonacoDiffEditor
       }
     }, [onContentChange])
 
-    // §2.4.4 监听折叠状态变化（使用优化后的折叠逻辑）
+    // §2.4.4 监听折叠状态变化 - 使用 useFolding hook 统一处理
     useEffect(() => {
       updateFolding()
-    }, [updateFolding])
+    }, [isCollapsed, updateFolding])
 
     // 监听字体设置变化并更新编辑器
     useEffect(() => {
@@ -387,10 +377,10 @@ export const MonacoDiffEditor = forwardRef<MonacoDiffEditorRef, MonacoDiffEditor
           const modifiedEditor = editor.getModifiedEditor()
 
           // 更新字体设置
-          if (originalEditor && !originalEditor.isDisposed?.()) {
+          if (originalEditor && !(originalEditor as unknown as { isDisposed?: () => boolean }).isDisposed?.()) {
             originalEditor.updateOptions({ fontSize, fontFamily })
           }
-          if (modifiedEditor && !modifiedEditor.isDisposed?.()) {
+          if (modifiedEditor && !(modifiedEditor as unknown as { isDisposed?: () => boolean }).isDisposed?.()) {
             modifiedEditor.updateOptions({ fontSize, fontFamily })
           }
         } catch (error) {

@@ -4,10 +4,19 @@ import * as fs from 'fs'
 
 let db: Database.Database | null = null
 
+function getDefaultDbPath(): string {
+  try {
+    const { app } = require('electron')
+    return path.join(app.getPath('userData'), 'textdiff.db')
+  } catch {
+    return path.join(process.cwd(), 'textdiff.db')
+  }
+}
+
 export function initDatabase(dbPath?: string): Database.Database {
   if (db) return db
 
-  const defaultPath = path.join(process.cwd(), 'textdiff.db')
+  const defaultPath = getDefaultDbPath()
   const finalPath = dbPath || defaultPath
 
   db = new Database(finalPath)

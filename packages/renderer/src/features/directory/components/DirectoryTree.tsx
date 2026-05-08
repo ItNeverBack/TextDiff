@@ -35,12 +35,12 @@ export const DirectoryTree: React.FC<DirectoryTreeProps> = ({
     return (
       <React.Fragment key={node.relativePath}>
         <TreeNode
-          node={node}
-          depth={depth}
-          expanded={isExpanded}
-          selected={isSelected}
-          onToggleExpand={onToggleExpand}
-          onSelect={onSelectEntry}
+          entry={node}
+          side="left"
+          isExpanded={isExpanded}
+          isSelected={isSelected}
+          onToggle={() => onToggleExpand(node.relativePath)}
+          onSelect={() => onSelectEntry(node)}
         />
         {/* 递归渲染子节点 */}
         {node.type === 'directory' && isExpanded && node.children && node.children.length > 0 && (

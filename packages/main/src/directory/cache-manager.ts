@@ -120,8 +120,6 @@ export class CacheManager extends EventEmitter {
   performCleanup(): void {
     try {
       const stats = this.cacheManager.getStats();
-      const memoryUsagePercent = (stats.memoryEstimate / this.config.maxMemoryUsage) * 100;
-
       // 检查内存使用
       if (stats.memoryEstimate > this.config.maxMemoryUsage) {
         this.emit('memory:warning', {
@@ -171,9 +169,6 @@ export class CacheManager extends EventEmitter {
    */
   private cleanupOldestCache(): void {
     // 找到最旧的缓存并删除
-    let oldestPath: string | null = null;
-    let oldestTime = Date.now();
-
     // 需要遍历所有缓存，这里简化处理
     // 实际实现应该在 DirectoryCacheManager 中添加 getOldestCache 方法
     const stats = this.cacheManager.getStats();

@@ -17,6 +17,7 @@ export type MenuTranslationKey =
   | 'menu.file.openPair'
   | 'menu.file.openLeft'
   | 'menu.file.openRight'
+  | 'menu.file.openDirectoryPair'
   | 'menu.file.pasteText'
   | 'menu.file.directoryCompare'
   | 'menu.file.mergeView'
@@ -42,6 +43,7 @@ export type ToolbarTranslationKey =
   | 'toolbar.openPair'
   | 'toolbar.openLeft'
   | 'toolbar.openRight'
+  | 'toolbar.openDirectoryPair'
   | 'toolbar.ignore'
   | 'toolbar.ignoreWhitespace'
   | 'toolbar.ignoreCase'
@@ -137,6 +139,15 @@ export type DialogTranslationKey =
   | 'dialog.session.loadTitle'
   | 'dialog.session.deleteTitle'
   | 'dialog.session.hint'
+  | 'dialog.unsaved.title'
+  | 'dialog.unsaved.message'
+  | 'dialog.unsaved.remaining'
+  | 'dialog.unsaved.save'
+  | 'dialog.unsaved.discard'
+  | 'dialog.unsaved.saveAll'
+  | 'dialog.unsaved.discardAll'
+  | 'dialog.unsaved.batchMessage'
+  | 'dialog.unsaved.applyToAll'
 
 /** 翻译键名 - 合并视图 */
 export type MergeTranslationKey =

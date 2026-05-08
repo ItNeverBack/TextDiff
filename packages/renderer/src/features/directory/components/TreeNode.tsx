@@ -5,7 +5,7 @@
 import React, { memo, useCallback, MouseEvent } from 'react';
 import { cn } from '@renderer/lib/utils';
 import { FileIcon, StatusIcon } from './FileIcon';
-import type { DirectoryDiffEntry, DiffStatus } from '@shared/types/directory.types';
+import type { DirectoryDiffEntry } from '@shared/types/directory.types';
 import { STATUS_COLORS, STATUS_DETAILS } from '@shared/types/directory.types';
 
 // ============================================
@@ -170,7 +170,6 @@ export const TreeNode: React.FC<TreeNodeProps> = memo(({
         <StatusIcon
           status={entry.status}
           size="sm"
-          color={statusColor.color}
         />
 
         {/* 状态标签（仅在有差异时显示） */}

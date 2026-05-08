@@ -453,7 +453,7 @@ export function validateFilter(
       break
 
     default:
-      return { valid: false, error: `未知的过滤器类型: ${filter.type}` }
+      return { valid: false, error: `未知的过滤器类型: ${(filter as DirectoryFilter).type}` }
   }
 
   return { valid: true }

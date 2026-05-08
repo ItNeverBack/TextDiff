@@ -21,7 +21,7 @@ export function ShortcutsHelp({ open, onClose }: ShortcutsHelpProps) {
     {
       nameKey: 'shortcuts.group.fileOps',
       shortcuts: SHORTCUTS.filter(s =>
-        ['openFilePair', 'openLeftFile', 'openRightFile', 'openDirectoryDiff', 'saveSession', 'pasteText', 'showSessionHistory'].includes(s.action)
+        ['openFilePair', 'openDirectoryDiff', 'saveSession', 'pasteText', 'showSessionHistory'].includes(s.action)
       )
     },
     {

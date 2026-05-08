@@ -92,7 +92,7 @@ export function useDirectoryShortcuts(options: DirectoryShortcutsOptions): void 
     onCloseOverlay
   } = options;
 
-  const store = useDirectoryCompareStore();
+  useDirectoryCompareStore();
 
   // 定义所有快捷键映射
   const shortcuts: ShortcutMapping[] = [

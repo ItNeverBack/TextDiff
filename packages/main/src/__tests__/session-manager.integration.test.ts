@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { SessionRepository } from '../session/session.repository'
 import { RecentFilesRepository } from '../session/recent-files.repository'
+import { initDatabase, closeDatabase } from '../session/database'
+import * as path from 'path'
+import * as os from 'os'
+import * as fs from 'fs'
 import type { DiffSession, FileInfo } from '@shared/types'
 
 /**
@@ -18,23 +22,35 @@ describe('SessionManager Integration Tests', () => {
   let sessionRepo: SessionRepository
   let recentFilesRepo: RecentFilesRepository
   let testSessionIds: string[] = []
+  let testDbPath: string
 
   beforeAll(() => {
-    // Initialize repositories (database connection is lazy)
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'textdiff-test-'))
+    testDbPath = path.join(tmpDir, 'test.db')
+    initDatabase(testDbPath)
+
     sessionRepo = new SessionRepository()
     recentFilesRepo = new RecentFilesRepository()
   })
 
-  afterAll(async () => {
-    // Clean up test sessions
+  afterAll(() => {
     for (const id of testSessionIds) {
       try {
-        await sessionRepo.delete(id)
+        sessionRepo.delete(id)
       } catch {
         // Ignore cleanup errors
       }
     }
     testSessionIds = []
+
+    closeDatabase()
+
+    try {
+      const tmpDir = path.dirname(testDbPath)
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    } catch {
+      // Ignore cleanup errors
+    }
   })
 
   const createTestFileInfo = (path: string, content: string): FileInfo => ({

@@ -6,8 +6,6 @@ export interface ShortcutDefinition {
 
 export const SHORTCUTS: ShortcutDefinition[] = [
   { key: 'Ctrl+O', action: 'openFilePair', description: '打开文件对' },
-  { key: 'Ctrl+L', action: 'openLeftFile', description: '打开左侧文件' },
-  { key: 'Ctrl+R', action: 'openRightFile', description: '打开右侧文件' },
   { key: 'Ctrl+Shift+D', action: 'openDirectoryDiff', description: '打开目录对比' },
   { key: 'Ctrl+S', action: 'saveSession', description: '保存会话' },
   { key: 'Ctrl+H', action: 'showSessionHistory', description: '会话历史' },

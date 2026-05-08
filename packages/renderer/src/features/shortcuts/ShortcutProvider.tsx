@@ -19,12 +19,13 @@ export interface ShortcutProviderProps {
   onShowSettings?: () => void
   onShowSessionHistory?: () => void
   onCloseOverlay?: () => void
+  onCloseTab?: (index: number) => void
   onConflictsDetected?: (conflicts: ShortcutConflict[]) => void
 }
 
-export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShowSettings, onShowSessionHistory, onCloseOverlay, onConflictsDetected }: ShortcutProviderProps) {
+export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShowSettings, onShowSessionHistory, onCloseOverlay, onCloseTab, onConflictsDetected }: ShortcutProviderProps) {
   const { toggleTheme } = useTheme()
-  const { nextChunk, prevChunk, firstChunk, lastChunk, toggleCollapse, swapFiles, viewMode, setViewMode, setLeftFile, setRightFile, leftFile, rightFile } = useDiffStore()
+  const { nextChunk, prevChunk, firstChunk, lastChunk, toggleCollapse, swapFiles, viewMode: _viewMode, setViewMode, setLeftFile, setRightFile, leftFile, rightFile } = useDiffStore()
   const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles, swapActiveTabFiles } = useTabStore()
   const { saveSession } = useSessionStore()
 
@@ -51,8 +52,6 @@ export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShow
     openFilePair: () => {
       openFile('left').then(() => openFile('right'))
     },
-    openLeftFile: () => openFile('left'),
-    openRightFile: () => openFile('right'),
     saveSession: async () => {
       if (leftFile && rightFile) {
         const leftName = leftFile.path?.split(/[\/]/).pop() || '未命名'
@@ -87,7 +86,11 @@ export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShow
     newTab: () => addTab(),
     closeTab: () => {
       if (tabs.length > 1) {
-        closeTab(activeIndex)
+        if (onCloseTab) {
+          onCloseTab(activeIndex)
+        } else {
+          closeTab(activeIndex)
+        }
       }
     },
     search: () => {

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useDiffStore, useTabStore } from '../../stores'
 import { api } from '../../lib/api'
 import { useI18n } from '../../hooks/useI18n'
@@ -7,12 +8,13 @@ interface ToolbarProps {
   onShowIgnorePanel: () => void
   onShowSearch: () => void
   onShowDirectoryView?: () => void
+  onOpenDirectoryPair?: () => void
   onShowMergeView?: () => void
   onSetSplitView?: () => void
   onSetUnifiedView?: () => void
 }
 
-export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onShowSearch, onShowDirectoryView, onShowMergeView, onSetSplitView, onSetUnifiedView }: ToolbarProps) {
+export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onShowSearch, onShowDirectoryView: _onShowDirectoryView, onOpenDirectoryPair, onShowMergeView, onSetSplitView, onSetUnifiedView }: ToolbarProps) {
   const { 
     diffResult, 
     options, 
@@ -31,25 +33,12 @@ export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onSh
   } = useDiffStore()
   const { setActiveTabFiles } = useTabStore()
   const { t } = useI18n()
+  const toolbarRef = useRef<HTMLDivElement>(null)
 
-  const handleOpenFile = async (side: 'left' | 'right') => {
-    try {
-      const file = await api.openFile(side)
-      if (!file) return
-
-      // 获取当前状态用于合并
-      const { tabs, activeIndex } = useTabStore.getState()
-      const currentTab = tabs[activeIndex]
-
-      if (side === 'left') {
-        setLeftFile(file)
-        setActiveTabFiles(file, currentTab.rightFile)
-      } else {
-        setRightFile(file)
-        setActiveTabFiles(currentTab.leftFile, file)
-      }
-    } catch (error) {
-      console.error('Failed to open file:', error)
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY !== 0 && toolbarRef.current) {
+      e.preventDefault()
+      toolbarRef.current.scrollLeft += e.deltaY
     }
   }
 
@@ -101,13 +90,21 @@ export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onSh
     }
   }
 
+  const handleOpenDirectoryPair = async () => {
+    try {
+      onOpenDirectoryPair?.()
+    } catch (error) {
+      console.error('Failed to open directory pair:', error)
+    }
+  }
+
   const chunkCount = diffResult?.chunks.length || 0
 
   // 判断当前是否在文件对比模式
   const isFileDiffMode = viewMode === 'split' || viewMode === 'unified'
 
   return (
-    <div className="toolbar">
+    <div className="toolbar" ref={toolbarRef} onWheel={handleWheel}>
       <div className="toolbar-group">
         <button 
           className="toolbar-btn file-btn" 
@@ -123,25 +120,15 @@ export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onSh
         </button>
         <button 
           className="toolbar-btn file-btn" 
-          onClick={() => handleOpenFile('left')}
-          title={`${t('toolbar.openLeft')} (Ctrl+L)`}
+          onClick={handleOpenDirectoryPair}
+          title={`${t('toolbar.openDirectoryPair')} (Ctrl+Shift+D)`}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+            <path d="M9 7V5M15 7V5"/>
           </svg>
-          <span>{t('toolbar.openLeft')}</span>
-          <kbd>Ctrl+L</kbd>
-        </button>
-        <button 
-          className="toolbar-btn file-btn" 
-          onClick={() => handleOpenFile('right')}
-          title={`${t('toolbar.openRight')} (Ctrl+R)`}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span>{t('toolbar.openRight')}</span>
-          <kbd>Ctrl+R</kbd>
+          <span>{t('toolbar.openDirectoryPair')}</span>
+          <kbd>Ctrl+Shift+D</kbd>
         </button>
       </div>
 
@@ -224,7 +211,7 @@ export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onSh
       <div className="toolbar-group">
         <button
           className="toolbar-btn"
-          onClick={() => onShowDirectoryView?.()}
+          onClick={() => _onShowDirectoryView?.()}
           title={t('toolbar.directoryView')}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

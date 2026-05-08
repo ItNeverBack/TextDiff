@@ -111,7 +111,7 @@ function SideView({
     }
   }, [onDropFile])
 
-  const { t } = useI18n()
+  const { t: _t } = useI18n()
 
   const getFileName = (path: string): string => {
     return path.split(/[/\\]/).pop() || path
@@ -252,9 +252,9 @@ function SideView({
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
               }}
-              title={currentFile.path}
+              title={currentFile.path ?? undefined}
             >
-              {getFileName(currentFile.path)}
+              {getFileName(currentFile.path ?? '')}
             </span>
           </div>
           <div style={{ marginTop: '8px' }}>

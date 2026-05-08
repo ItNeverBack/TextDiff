@@ -26,6 +26,7 @@ export const zhCN: TranslationDictionary = {
   'menu.tools': '工具',
   'menu.help': '帮助',
   'menu.file.openPair': '打开文件对...',
+  'menu.file.openDirectoryPair': '打开目录对...',
   'menu.file.openLeft': '打开左侧文件',
   'menu.file.openRight': '打开右侧文件',
   'menu.file.pasteText': '粘贴文本对比',
@@ -50,6 +51,7 @@ export const zhCN: TranslationDictionary = {
 
   // 工具栏
   'toolbar.openPair': '打开文件对',
+  'toolbar.openDirectoryPair': '打开目录对',
   'toolbar.openLeft': '左侧文件',
   'toolbar.openRight': '右侧文件',
   'toolbar.ignore': '忽略：',
@@ -267,4 +269,15 @@ export const zhCN: TranslationDictionary = {
   'shortcuts.group.other': '其他',
   'shortcuts.hint': '提示：按 Escape 键可关闭此对话框',
   'shortcuts.available': '可用的键盘快捷键：',
+
+  // 未保存更改
+  'dialog.unsaved.title': '未保存的更改',
+  'dialog.unsaved.message': '以下会话有未保存的更改：',
+  'dialog.unsaved.remaining': '还有 {count} 个未保存的会话',
+  'dialog.unsaved.save': '保存',
+  'dialog.unsaved.discard': '不保存',
+  'dialog.unsaved.saveAll': '全部保存',
+  'dialog.unsaved.discardAll': '全部不保存',
+  'dialog.unsaved.batchMessage': '有 {count} 个会话包含未保存的更改。',
+  'dialog.unsaved.applyToAll': '对全部 {count} 个未保存会话应用相同选择'
 }

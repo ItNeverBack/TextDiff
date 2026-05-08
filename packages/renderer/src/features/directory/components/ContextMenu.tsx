@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { cn } from '@renderer/lib/utils';
-import type { DirectoryDiffEntry, DiffStatus } from '@shared/types/directory.types';
+import type { DirectoryDiffEntry } from '@shared/types/directory.types';
 
 // ============================================
 // 菜单项类型

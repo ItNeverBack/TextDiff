@@ -158,7 +158,19 @@ Remove-Item "dist/vx.x.x/builder-debug.yml" -Force -ErrorAction SilentlyContinue
 Remove-Item "dist/vx.x.x/latest.yml" -Force -ErrorAction SilentlyContinue
 ```
 
-### 7. 发布到 GitHub Release
+### 7. 提交并推送代码
+
+将版本号变更及所有相关代码提交到 Git，并推送到远程仓库：
+
+```powershell
+git add -A
+git commit -m "chore: release vx.x.x"
+git push
+```
+
+> **注意**：此步骤应在发布 GitHub Release 之前完成，确保远程仓库的代码与发布版本一致。
+
+### 8. 发布到 GitHub Release
 
 确保已安装并登录 GitHub CLI (`gh`)：
 
@@ -192,14 +204,14 @@ https://github.com/ItNeverBack/TextDiff/releases/tag/vx.x.x
 
 ---
 
-## 最终产物
+### 9. 最终产物
 
-以 v1.1.0 为例，`dist/v1.1.0/` 目录结构如下：
+以 v1.2.0 为例，`dist/v1.2.0/` 目录结构如下：
 
 ```
-dist/v1.1.0/
-├── TextDiff-1.1.0-win.tar.gz            # Windows 压缩包（x64，~98 MB）
-└── textdiff_1.1.0_amd64.deb             # Linux DEB 安装包（amd64，~87 MB）
+dist/v1.2.0/
+├── TextDiff-1.2.0-win.tar.gz            # Windows 压缩包（x64，~111 MB）
+└── textdiff_1.2.0_amd64.deb             # Linux DEB 安装包（amd64，~91 MB）
 ```
 
 ### 产物说明

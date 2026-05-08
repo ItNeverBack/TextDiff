@@ -273,7 +273,3 @@ function sendResult(taskId: string, result: unknown): void {
 function sendError(taskId: string, error: string): void {
   sendMessage({ type: 'error', taskId, error });
 }
-
-function sendProgress(taskId: string, progress: number, message?: string): void {
-  sendMessage({ type: 'progress', taskId, progress, message });
-}

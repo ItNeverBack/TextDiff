@@ -28,7 +28,7 @@ class WorkerWrapper {
 
   constructor(
     public id: number,
-    private scriptPath: string,
+    scriptPath: string,
     private onMessage: (message: WorkerMessage) => void,
     private onExit: (code: number) => void
   ) {

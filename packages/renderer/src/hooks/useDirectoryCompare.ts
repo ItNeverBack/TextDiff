@@ -3,8 +3,7 @@ import { useDirectoryCompareStore } from '../stores/directory.store';
 import { useFilterStore, createFilterFunction } from '../stores/filter.store';
 import type {
   DirectoryDiffEntry,
-  DirCompareOptions,
-  DirectoryComparison
+  DirCompareOptions
 } from '@shared/types/directory.types';
 
 // ============================================

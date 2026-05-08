@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import type { SyncOperation, SyncAction } from '@shared/types'
+import type { SyncOperation } from '@shared/types'
 
 /**
  * 撤销操作类型
@@ -95,7 +95,7 @@ export async function createUndoOperation(
   operation: SyncOperation,
   backupPath?: string
 ): Promise<UndoOperation> {
-  const { entry, action } = operation
+  const { action } = operation
   const id = `undo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
   switch (action) {
@@ -126,7 +126,7 @@ async function createCopyUndoOperation(
   id: string,
   operation: SyncOperation,
   targetSide: 'left' | 'right',
-  backupPath?: string
+  _backupPath?: string
 ): Promise<UndoOperation> {
   const { entry } = operation
   const targetPath = targetSide === 'left' ? entry.leftPath : entry.rightPath
@@ -160,10 +160,6 @@ async function createDeleteUndoOperation(
   if (!backupPath || !sourcePath) {
     throw new Error('Cannot create undo for delete without backup')
   }
-
-  // 备份文件路径
-  const backupDir = path.dirname(backupPath)
-  const backupFileName = path.basename(backupPath)
 
   return {
     id,

@@ -32,8 +32,13 @@ export const useThemeStore = create<ThemeState & ThemeActions>()((set, get) => (
   },
 
   toggleTheme: () => {
-    const next: Theme =
-      get().theme === 'light' ? 'dark' : get().theme === 'dark' ? 'system' : 'light'
+    const current = get()
+    let next: Theme
+    if (current.theme === 'system') {
+      next = current.resolvedTheme === 'light' ? 'dark' : 'light'
+    } else {
+      next = current.theme === 'light' ? 'dark' : 'light'
+    }
     set({ theme: next, resolvedTheme: resolve(next) })
   },
 

@@ -16,6 +16,7 @@ import { setApplicationMenu } from './menu'
  */
 
 let mainWindow: BrowserWindow | null = null
+let isQuitting = false
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
@@ -103,7 +104,15 @@ async function createWindow() {
       }
     })
 
-  mainWindow.on('ready-to-show', () => {
+    // 监听渲染进程确认关闭
+    ipcMain.on('app:close-confirmed', () => {
+      if (mainWindow) {
+        isQuitting = true
+        mainWindow.close()
+      }
+    })
+
+    mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
     
     // 窗口显示后，检查是否有 CLI 传入的文件需要打开
@@ -112,6 +121,14 @@ async function createWindow() {
       mainWindow.webContents.send('cli:open-files', cliFiles)
       clearCliFiles()
     }
+  })
+
+  mainWindow.on('close', (event) => {
+    if (isQuitting) return
+    if (!mainWindow) return
+
+    event.preventDefault()
+    mainWindow.webContents.send('app:check-unsaved')
   })
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -177,6 +194,7 @@ async function startGuiMode(): Promise<void> {
   })
 
   app.on('window-all-closed', () => {
+    isQuitting = false
     if (process.platform !== 'darwin') {
       app.quit()
     }

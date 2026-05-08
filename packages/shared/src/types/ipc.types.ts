@@ -1,5 +1,5 @@
 import type { DiffOptions, DiffResult, ThreeWayDiffResult, DiffChunk, DiffLine } from './diff.types'
-import type { FileInfo, WatchEvent, DirectoryReadOptions } from './file.types'
+import type { FileInfo, WatchEvent } from './file.types'
 import type { DiffSession, RecentFile, RecentDirectory, ListOptions } from './session.types'
 import type { AppSettings } from './settings.types'
 import type {
@@ -220,3 +220,6 @@ export type IPCChannel =
   | 'dialog:open'
   // Week 13: 语言设置
   | 'app:setLanguage'
+  // 未保存更改确认
+  | 'app:check-unsaved'
+  | 'app:close-confirmed'

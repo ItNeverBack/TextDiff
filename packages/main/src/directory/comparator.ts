@@ -226,69 +226,6 @@ async function determineStatus(
 }
 
 /**
- * 对比子节点
- */
-async function compareChildren(
-  parentPath: string,
-  leftParent: DirTreeNode | undefined,
-  rightParent: DirTreeNode | undefined,
-  options: DirCompareOptions,
-  leftIndex: Map<string, DirTreeNode>,
-  rightIndex: Map<string, DirTreeNode>
-): Promise<DirectoryDiffEntry[]> {
-  // 获取直接子路径
-  const childNames = new Set<string>()
-  
-  // 从左侧索引收集子路径
-  for (const [relPath, node] of leftIndex) {
-    if (relPath.startsWith(parentPath + path.sep) || 
-        (parentPath === '' && !relPath.includes(path.sep))) {
-      const remainingPath = parentPath === '' ? relPath : relPath.slice(parentPath.length + 1)
-      const firstPart = remainingPath.split(path.sep)[0]
-      if (firstPart && !relPath.slice(parentPath.length + 1).includes(path.sep)) {
-        childNames.add(firstPart)
-      }
-    }
-  }
-  
-  // 从右侧索引收集子路径
-  for (const [relPath, node] of rightIndex) {
-    if (relPath.startsWith(parentPath + path.sep) || 
-        (parentPath === '' && !relPath.includes(path.sep))) {
-      const remainingPath = parentPath === '' ? relPath : relPath.slice(parentPath.length + 1)
-      const firstPart = remainingPath.split(path.sep)[0]
-      if (firstPart && !relPath.slice(parentPath.length + 1).includes(path.sep)) {
-        childNames.add(firstPart)
-      }
-    }
-  }
-
-  const result: DirectoryDiffEntry[] = []
-
-  for (const name of childNames) {
-    const childRelativePath = parentPath ? `${parentPath}${path.sep}${name}` : name
-    const leftChild = leftIndex.get(childRelativePath)
-    const rightChild = rightIndex.get(childRelativePath)
-
-    const entry = await compareNodes(
-      childRelativePath,
-      leftChild,
-      rightChild,
-      options,
-      leftIndex,
-      rightIndex
-    )
-
-    result.push(entry)
-  }
-
-  // 按名称排序
-  result.sort((a, b) => a.name.localeCompare(b.name))
-
-  return result
-}
-
-/**
  * 对比文件内容
  */
 async function compareFileContent(

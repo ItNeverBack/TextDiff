@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import type { DirectoryDiffEntry, DirectoryReadOptions, FileFilter, DirectoryExcludeRule } from '@shared/types'
+import { generateId } from '@shared/utils/id'
 
 /**
  * 将 glob 模式转换为正则表达式
@@ -246,10 +247,12 @@ export async function compareDirectories(
     const inRight = rightRelative.includes(relPath)
 
     const entry: DirectoryDiffEntry = {
+      id: generateId(),
       relativePath: relPath,
       name: path.basename(relPath),
       type: 'file',
       status: 'equal',
+      depth: relPath.split(path.sep).length - 1,
       leftPath: inLeft ? path.join(leftDir, relPath) : null,
       rightPath: inRight ? path.join(rightDir, relPath) : null
     }
@@ -290,10 +293,12 @@ function buildTree(entries: DirectoryDiffEntry[]): DirectoryDiffEntry[] {
 
       if (!map.has(currentPath)) {
         const dirEntry: DirectoryDiffEntry = {
+          id: generateId(),
           relativePath: currentPath,
           name: part,
           type: isFile ? 'file' : 'directory',
           status: entry.status,
+          depth: i,
           leftPath: isFile ? entry.leftPath : null,
           rightPath: isFile ? entry.rightPath : null,
           children: isFile ? undefined : []

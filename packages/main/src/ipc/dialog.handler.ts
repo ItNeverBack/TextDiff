@@ -1,9 +1,10 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, BrowserWindow } from 'electron'
 import type { OpenDialogOptions, SaveDialogOptions } from '@shared/types/ipc.types'
 
 export function registerDialogHandlers(): void {
-  ipcMain.handle('dialog:open', async (_event, options: OpenDialogOptions): Promise<string[] | null> => {
-    const result = await dialog.showOpenDialog({
+  ipcMain.handle('dialog:open', async (event, options: OpenDialogOptions): Promise<string[] | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)!
+    const result = await dialog.showOpenDialog(win, {
       title: options.title,
       defaultPath: options.defaultPath,
       filters: options.filters,
@@ -17,8 +18,9 @@ export function registerDialogHandlers(): void {
     return result.filePaths
   })
 
-  ipcMain.handle('dialog:save', async (_event, options: SaveDialogOptions): Promise<string | null> => {
-    const result = await dialog.showSaveDialog({
+  ipcMain.handle('dialog:save', async (event, options: SaveDialogOptions): Promise<string | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)!
+    const result = await dialog.showSaveDialog(win, {
       title: options.title,
       defaultPath: options.defaultPath,
       filters: options.filters

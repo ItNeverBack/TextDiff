@@ -9,6 +9,8 @@ import { api } from '@renderer/lib/api'
 import { configureMonaco } from '../monaco-theme'
 import './DiffView.css'
 
+const EDIT_HISTORY_DEBOUNCE_MS = 800
+
 /**
  * 双栏对比视图容器（Monaco Editor 版本）
  * 
@@ -32,13 +34,15 @@ export function SplitDiffView() {
   } = useDiffStore()
   
   const { tabs, activeIndex, setActiveTabFiles, setActiveTabDiffResult, swapActiveTabFiles, updateActiveTabContent, markActiveTabAsSaved } = useTabStore()
-  const { clear: clearHistory } = useHistoryStore()
+  const { clear: clearHistory, addEntry } = useHistoryStore()
   const activeTab = tabs[activeIndex]
   
   const editorRef = useRef<MonacoDiffEditorRef>(null)
   
-  // 跟踪内容是否已修改（用于显示保存按钮状态）
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  const editBeforeStateRef = useRef<{ leftContent: string; rightContent: string } | null>(null)
+  const editTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // §2.7.4 Minimap 滚动状态跟踪
   const [scrollState, setScrollState] = useState({
@@ -95,10 +99,22 @@ export function SplitDiffView() {
     configureMonaco()
   }, [])
 
-  // 当文件变化时清空历史记录
+  useEffect(() => {
+    return () => {
+      if (editTimerRef.current) {
+        clearTimeout(editTimerRef.current)
+      }
+    }
+  }, [])
+
   useEffect(() => {
     if (activeTab?.leftFile?.path && activeTab?.rightFile?.path) {
       clearHistory()
+      editBeforeStateRef.current = null
+      if (editTimerRef.current) {
+        clearTimeout(editTimerRef.current)
+        editTimerRef.current = null
+      }
     }
   }, [activeTab?.leftFile?.path, activeTab?.rightFile?.path, clearHistory])
 
@@ -290,12 +306,42 @@ export function SplitDiffView() {
     }
   }, [setLeftFile, setRightFile, setActiveTabFiles, leftFile, rightFile, setDiffResult, setActiveTabDiffResult, options, setIsComputing])
 
-  // 处理编辑器内容变化（防抖处理）
   const handleContentChange = useCallback((side: 'left' | 'right', content: string) => {
-    // 更新 tab store 中的内容
+    const currentTab = useTabStore.getState().tabs[useTabStore.getState().activeIndex]
+    if (!currentTab?.leftFile || !currentTab?.rightFile) return
+
+    if (editBeforeStateRef.current === null) {
+      editBeforeStateRef.current = {
+        leftContent: currentTab.leftFile.content,
+        rightContent: currentTab.rightFile.content
+      }
+    }
+
     updateActiveTabContent(side, content)
     setHasUnsavedChanges(true)
-  }, [updateActiveTabContent])
+
+    if (editTimerRef.current) {
+      clearTimeout(editTimerRef.current)
+    }
+
+    editTimerRef.current = setTimeout(() => {
+      const latestTab = useTabStore.getState().tabs[useTabStore.getState().activeIndex]
+      if (!latestTab?.leftFile || !latestTab?.rightFile) return
+
+      const before = editBeforeStateRef.current
+      if (before) {
+        const after = {
+          leftContent: latestTab.leftFile.content,
+          rightContent: latestTab.rightFile.content
+        }
+        if (before.leftContent !== after.leftContent || before.rightContent !== after.rightContent) {
+          addEntry('edit', side === 'left' ? '编辑左侧内容' : '编辑右侧内容', before, after)
+        }
+      }
+      editBeforeStateRef.current = null
+      editTimerRef.current = null
+    }, EDIT_HISTORY_DEBOUNCE_MS)
+  }, [updateActiveTabContent, addEntry])
 
   // 保存文件
   const handleSave = useCallback(async (side?: 'left' | 'right') => {

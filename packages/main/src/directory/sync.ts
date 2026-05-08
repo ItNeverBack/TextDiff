@@ -317,7 +317,7 @@ export class SyncEngine {
     options: SyncOptions
   ): Promise<void> {
     // 使用 side 参数来记录日志或进行其他操作
-    const _direction = side
+    void side // suppress unused warning
     // 确保目标目录存在
     const targetDir = path.dirname(targetPath)
     await this.ensureDirectoryExists(targetDir)

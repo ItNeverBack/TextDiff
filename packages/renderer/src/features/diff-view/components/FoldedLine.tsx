@@ -18,15 +18,17 @@ interface FoldedLineProps {
   count: number
   /** 点击回调 */
   onClick?: () => void
+  /** 虚拟滚动定位样式 */
+  style?: React.CSSProperties
 }
 
 /**
  * 折叠行组件
  * 显示被折叠的相同内容行数和展开按钮
  */
-export function FoldedLine({ count, onClick }: FoldedLineProps) {
+export function FoldedLine({ count, onClick, style }: FoldedLineProps) {
   return (
-    <div className="diff-line folded" onClick={onClick}>
+    <div className="diff-line folded" onClick={onClick} style={style}>
       <div className="line-number">...</div>
       <div className="line-gutter"></div>
       <div className="folded-placeholder">

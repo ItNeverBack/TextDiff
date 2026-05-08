@@ -6,7 +6,7 @@ import React, { useCallback, MouseEvent } from 'react';
 import { cn } from '@renderer/lib/utils';
 import { TreeNode, TreeNodeEmpty, TreeNodeLoading, TreeNodeError } from './TreeNode';
 import { useDirectoryCompareStore } from '@renderer/stores/directory.store';
-import { useTreeExpand, useTreeVisibility, useTreeOperations } from '@renderer/hooks/useTreeExpand';
+import { useTreeVisibility, useTreeOperations } from '@renderer/hooks/useTreeExpand';
 import { useVirtualScroll } from '@renderer/hooks/useVirtualScroll';
 import type { DirectoryDiffEntry } from '@shared/types/directory.types';
 
@@ -172,7 +172,6 @@ export const DirectoryTreePanel: React.FC<DirectoryTreePanelProps> = ({
       >
         {visibleItems.map(({ item, index, style }) => {
           const entry = visibleEntries[index]?.entry || item;
-          const depth = visibleEntries[index]?.depth || 0;
           return (
             <div
               key={entry.id}

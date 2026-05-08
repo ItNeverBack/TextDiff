@@ -3,9 +3,9 @@
  * Use these functions instead of calling window.api directly.
  */
 import type { DiffOptions, DiffResult, ThreeWayDiffResult, DiffLine, DiffChunk } from '@shared/types'
-import type { FileInfo, DirectoryDiffEntry, WatchEvent, DirectoryReadOptions } from '@shared/types'
+import type { FileInfo, DirectoryDiffEntry, WatchEvent } from '@shared/types'
 import type { DiffSession, RecentFile, RecentDirectory, ListOptions } from '@shared/types'
-import type { AppSettings, DirectoryInfo, DirectoryComparison, DirCompareOptions, SyncPlan, SyncResult, SyncStrategy, SyncProgress, ReportOptions, ReportFormat } from '@shared/types'
+import type { AppSettings, DirectoryComparison, DirCompareOptions, SyncPlan, SyncResult, SyncStrategy, SyncProgress, ReportOptions, SyncOperation } from '@shared/types'
 import type { SaveDialogOptions, OpenDialogOptions, SyncDiffOptions, SyncDiffResult } from '@shared/types/ipc.types'
 
 export const api = {
@@ -29,9 +29,9 @@ export const api = {
   computeThreeWayDiff: (base: FileInfo, left: FileInfo, right: FileInfo): Promise<ThreeWayDiffResult> =>
     window.api.computeThreeWayDiff(base, left, right),
 
-  // Directory operations
-  compareDirectories: (leftDir: string, rightDir: string, options?: DirectoryReadOptions): Promise<DirectoryDiffEntry[]> =>
-    window.api.compareDirectories(leftDir, rightDir, options),
+  // Directory operations (legacy - use api.directory.compare for full comparison)
+  compareDirectories: (leftDir: string, rightDir: string, options?: Partial<DirCompareOptions>): Promise<DirectoryDiffEntry[]> =>
+    window.api.directory.compare(leftDir, rightDir, options).then(r => r.entries),
 
   // Session operations
   saveSession: (session: DiffSession): Promise<void> =>
@@ -103,7 +103,7 @@ export const api = {
       window.api.sync.execute(plan, options),
     cancel: (syncId: string): Promise<boolean> =>
       window.api.sync.cancel(syncId),
-    getProgress: (syncId: string): Promise<{ exists: boolean; currentOperation?: { type: string; sourcePath: string; targetPath: string } | null; elapsedTime?: number }> =>
+    getProgress: (syncId: string): Promise<{ exists: boolean; currentOperation?: SyncOperation | null; elapsedTime?: number }> =>
       window.api.sync.getProgress(syncId),
   },
 
