@@ -10,6 +10,7 @@ interface MenuBarProps {
   onShowSessionHistory?: () => void
   onShowSettings?: () => void
   onShowShortcuts?: () => void
+  onShowAbout?: () => void
   onShowMergeView?: () => void
   onShowDirectoryView?: () => void
   onOpenDirectoryPair?: () => void
@@ -17,7 +18,7 @@ interface MenuBarProps {
   onSetUnifiedView?: () => void
 }
 
-export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory, onShowSettings, onShowShortcuts, onShowMergeView, onShowDirectoryView: _onShowDirectoryView, onOpenDirectoryPair, onSetSplitView, onSetUnifiedView }: MenuBarProps) {
+export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory, onShowSettings, onShowShortcuts, onShowAbout, onShowMergeView, onShowDirectoryView: _onShowDirectoryView, onOpenDirectoryPair, onSetSplitView, onSetUnifiedView }: MenuBarProps) {
   const { theme, toggleTheme } = useTheme()
   const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles } = useTabStore()
   const { setLeftFile, setRightFile, toggleCollapse } = useDiffStore()
@@ -199,7 +200,7 @@ export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory
               <span className="menu-label">{t('menu.help.shortcuts')}</span>
             </div>
             <div className="menu-divider" />
-            <div className="menu-dropdown-item">
+            <div className="menu-dropdown-item" onClick={() => { onShowAbout?.(); setActiveMenu(null); }}>
               <span className="menu-label">{t('menu.help.about')}</span>
             </div>
           </div>

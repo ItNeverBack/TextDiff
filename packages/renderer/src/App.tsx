@@ -6,7 +6,7 @@ import { DiffView, configureMonaco } from './features/diff-view'
 import { MergeView } from './features/merge'
 import { DirectoryView } from './features/directory'
 import { WelcomeView } from './components/welcome'
-import { PasteDialog, IgnorePanel, SearchDialog, SettingsDialog, ShortcutsHelp, SessionListDialog, UnsavedChangesDialog } from './components/dialogs'
+import { PasteDialog, IgnorePanel, SearchDialog, SettingsDialog, ShortcutsHelp, SessionListDialog, UnsavedChangesDialog, AboutDialog } from './components/dialogs'
 import type { UnsavedChangesAction } from './components/dialogs'
 import { ShortcutProvider } from './features/shortcuts/ShortcutProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -28,6 +28,7 @@ export default function App() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false)
   const [showSessionList, setShowSessionList] = useState(false)
+  const [showAboutDialog, setShowAboutDialog] = useState(false)
 
   // 未保存更改确认状态
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false)
@@ -46,6 +47,7 @@ export default function App() {
     setShowSettingsDialog(false)
     setShowShortcutsHelp(false)
     setShowSessionList(false)
+    setShowAboutDialog(false)
     setShowUnsavedDialog(false)
   }, [])
 
@@ -300,6 +302,7 @@ export default function App() {
             onShowSessionHistory={() => setShowSessionList(true)}
             onShowSettings={() => setShowSettingsDialog(true)}
             onShowShortcuts={() => setShowShortcutsHelp(true)}
+            onShowAbout={() => setShowAboutDialog(true)}
             onShowMergeView={handleShowMergeView}
             onShowDirectoryView={handleShowDirectoryView}
             onOpenDirectoryPair={handleOpenDirectoryPair}
@@ -375,6 +378,11 @@ export default function App() {
             tabTitle={dirtyTabsList[unsavedTabIndex]?.tab.title || ''}
             remainingCount={dirtyTabsList.length - unsavedTabIndex - 1}
             onAction={handleUnsavedAction}
+          />
+
+          <AboutDialog
+            open={showAboutDialog}
+            onClose={() => setShowAboutDialog(false)}
           />
         </div>
       </FileDropZone>

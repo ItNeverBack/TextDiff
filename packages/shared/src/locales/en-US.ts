@@ -108,6 +108,8 @@ export const enUS: TranslationDictionary = {
   'dialog.ignorePanel.myers': 'Myers (Default/Git)',
   'dialog.ignorePanel.patience': 'Patience (Clearer context)',
   'dialog.ignorePanel.histogram': 'Histogram (Improved Patience)',
+  'dialog.ignorePanel.addPrefixPlaceholder': 'Add prefix',
+  'dialog.ignorePanel.prefixExists': 'Prefix already exists',
   'dialog.paste.title': 'Paste Text to Compare',
   'dialog.paste.leftText': 'Left Text',
   'dialog.paste.rightText': 'Right Text',
@@ -269,6 +271,11 @@ export const enUS: TranslationDictionary = {
   'shortcuts.group.other': 'Other',
   'shortcuts.hint': 'Tip: Press Escape to close this dialog',
   'shortcuts.available': 'Available keyboard shortcuts:',
+  'shortcuts.editHint': 'Click a shortcut to edit it. Press Backspace/Delete to reset to default.',
+  'shortcuts.pressKeys': 'Press keys...',
+  'shortcuts.conflictError': 'This shortcut is already used by another action',
+  'shortcuts.custom': 'Custom',
+  'shortcuts.searchPlaceholder': 'Search shortcuts...',
 
   // Unsaved Changes
   'dialog.unsaved.title': 'Unsaved Changes',
@@ -279,5 +286,11 @@ export const enUS: TranslationDictionary = {
   'dialog.unsaved.saveAll': 'Save All',
   'dialog.unsaved.discardAll': "Don't Save All",
   'dialog.unsaved.batchMessage': '{count} session(s) have unsaved changes.',
-  'dialog.unsaved.applyToAll': 'Apply the same choice to all {count} unsaved sessions'
+  'dialog.unsaved.applyToAll': 'Apply the same choice to all {count} unsaved sessions',
+
+  'dialog.resetConfirm.title': 'Confirm Reset',
+  'dialog.resetConfirm.general': 'Are you sure you want to reset general settings to defaults?',
+  'dialog.resetConfirm.editor': 'Are you sure you want to reset editor settings to defaults?',
+  'dialog.resetConfirm.diff': 'Are you sure you want to reset diff settings to defaults?',
+  'dialog.resetConfirm.shortcuts': 'Are you sure you want to reset all shortcuts to defaults?'
 }

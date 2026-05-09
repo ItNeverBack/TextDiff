@@ -2,6 +2,7 @@ import type { FileInfo, DiffOptions, DiffResult, ViewMode } from '@shared/types'
 import { DEFAULT_SETTINGS } from '@shared/types'
 import { create } from 'zustand'
 import { api } from '../lib/api'
+import { useSettingsStore } from './settings.store'
 
 interface DiffState {
   leftFile: FileInfo | null
@@ -32,9 +33,28 @@ interface DiffActions {
   toggleScrollSync: () => void
   swapFiles: () => void
   reset: () => void
+  resetToSettingsDefaults: () => void
 }
 
-const defaultOptions: DiffOptions = {
+function getOptionsFromSettings(): DiffOptions {
+  const { settings } = useSettingsStore.getState()
+  return {
+    ignoreWhitespace: settings.diff.defaultIgnoreWhitespace,
+    ignoreCase: settings.diff.defaultIgnoreCase,
+    ignoreLineEndings: settings.diff.defaultIgnoreLineEndings,
+    ignorePatterns: [],
+    ignoreComments: settings.diff.defaultIgnoreComments,
+    commentPrefixes: settings.diff.defaultCommentPrefixes,
+    algorithm: settings.diff.defaultAlgorithm,
+    contextLines: settings.diff.contextLines
+  }
+}
+
+function getIsCollapsedFromSettings(): boolean {
+  return useSettingsStore.getState().settings.diff.foldUnchanged
+}
+
+const initialOptions: DiffOptions = {
   ignoreWhitespace: DEFAULT_SETTINGS.diff.defaultIgnoreWhitespace,
   ignoreCase: DEFAULT_SETTINGS.diff.defaultIgnoreCase,
   ignoreLineEndings: DEFAULT_SETTINGS.diff.defaultIgnoreLineEndings,
@@ -49,10 +69,10 @@ const initialState: DiffState = {
   leftFile: null,
   rightFile: null,
   diffResult: null,
-  options: defaultOptions,
+  options: initialOptions,
   viewMode: 'split',
   isComputing: false,
-  activeChunkIndex: -1,  // 初始值为 -1，表示没有选中任何 chunk，避免默认高亮
+  activeChunkIndex: -1,
   isCollapsed: DEFAULT_SETTINGS.diff.foldUnchanged,
   scrollSyncEnabled: true,
   computeTime: 0
@@ -111,7 +131,23 @@ export const useDiffStore = create<DiffState & DiffActions>((set, get) => ({
     rightFile: state.leftFile
   })),
 
-  reset: () => set(initialState)
+  reset: () => set({
+    leftFile: null,
+    rightFile: null,
+    diffResult: null,
+    options: getOptionsFromSettings(),
+    viewMode: 'split',
+    isComputing: false,
+    activeChunkIndex: -1,
+    isCollapsed: getIsCollapsedFromSettings(),
+    scrollSyncEnabled: true,
+    computeTime: 0
+  }),
+
+  resetToSettingsDefaults: () => set({
+    options: getOptionsFromSettings(),
+    isCollapsed: getIsCollapsedFromSettings()
+  })
 }))
 
 export function useComputeDiff() {

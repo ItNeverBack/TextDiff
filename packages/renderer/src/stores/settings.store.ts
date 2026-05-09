@@ -76,7 +76,14 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set, ge
   }
 }))
 
-// 初始化时从后端加载设置
 if (typeof window !== 'undefined') {
+  useSettingsStore.subscribe((state, prevState) => {
+    if (state.settings.diff !== prevState.settings.diff) {
+      import('./diff.store').then(({ useDiffStore }) => {
+        useDiffStore.getState().resetToSettingsDefaults()
+      })
+    }
+  })
+
   useSettingsStore.getState().loadFromBackend()
 }

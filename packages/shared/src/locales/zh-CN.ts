@@ -108,6 +108,8 @@ export const zhCN: TranslationDictionary = {
   'dialog.ignorePanel.myers': 'Myers（默认/Git同款）',
   'dialog.ignorePanel.patience': 'Patience（更清晰的上下文）',
   'dialog.ignorePanel.histogram': 'Histogram（改进型Patience）',
+  'dialog.ignorePanel.addPrefixPlaceholder': '添加注释符',
+  'dialog.ignorePanel.prefixExists': '该注释符已存在',
   'dialog.paste.title': '粘贴文本对比',
   'dialog.paste.leftText': '左侧文本',
   'dialog.paste.rightText': '右侧文本',
@@ -269,6 +271,11 @@ export const zhCN: TranslationDictionary = {
   'shortcuts.group.other': '其他',
   'shortcuts.hint': '提示：按 Escape 键可关闭此对话框',
   'shortcuts.available': '可用的键盘快捷键：',
+  'shortcuts.editHint': '点击快捷键可修改。按 Backspace/Delete 恢复默认值。',
+  'shortcuts.pressKeys': '请按键...',
+  'shortcuts.conflictError': '该快捷键已被其他功能使用',
+  'shortcuts.custom': '自定义',
+  'shortcuts.searchPlaceholder': '搜索快捷键...',
 
   // 未保存更改
   'dialog.unsaved.title': '未保存的更改',
@@ -279,5 +286,11 @@ export const zhCN: TranslationDictionary = {
   'dialog.unsaved.saveAll': '全部保存',
   'dialog.unsaved.discardAll': '全部不保存',
   'dialog.unsaved.batchMessage': '有 {count} 个会话包含未保存的更改。',
-  'dialog.unsaved.applyToAll': '对全部 {count} 个未保存会话应用相同选择'
+  'dialog.unsaved.applyToAll': '对全部 {count} 个未保存会话应用相同选择',
+
+  'dialog.resetConfirm.title': '确认重置',
+  'dialog.resetConfirm.general': '确定要将通用设置恢复为默认值吗？',
+  'dialog.resetConfirm.editor': '确定要将编辑器设置恢复为默认值吗？',
+  'dialog.resetConfirm.diff': '确定要将 Diff 设置恢复为默认值吗？',
+  'dialog.resetConfirm.shortcuts': '确定要将所有快捷键恢复为默认值吗？'
 }

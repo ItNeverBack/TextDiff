@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { SHORTCUTS } from '@shared/constants'
 import type { ShortcutDefinition } from '@shared/constants'
-import { useDiffStore, useTabStore, useSessionStore } from '../../stores'
+import { useDiffStore, useTabStore, useSessionStore, useSettingsStore } from '../../stores'
 import { useTheme } from '../theme'
 import { api } from '../../lib/api'
 
@@ -23,7 +23,16 @@ export interface ShortcutProviderProps {
   onConflictsDetected?: (conflicts: ShortcutConflict[]) => void
 }
 
+export function getEffectiveShortcuts(keyBindings: Record<string, string>): ShortcutDefinition[] {
+  if (!keyBindings || Object.keys(keyBindings).length === 0) return SHORTCUTS
+  return SHORTCUTS.map(s => {
+    const customKey = keyBindings[s.action]
+    return customKey ? { ...s, key: customKey } : s
+  })
+}
+
 export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShowSettings, onShowSessionHistory, onCloseOverlay, onCloseTab, onConflictsDetected }: ShortcutProviderProps) {
+  const keyBindings = useSettingsStore(s => s.settings.keyBindings)
   const { toggleTheme } = useTheme()
   const { nextChunk, prevChunk, firstChunk, lastChunk, toggleCollapse, swapFiles, viewMode: _viewMode, setViewMode, setLeftFile, setRightFile, leftFile, rightFile } = useDiffStore()
   const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles, swapActiveTabFiles } = useTabStore()
@@ -130,12 +139,12 @@ export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShow
     }
   }
 
-  // 存储当前的快捷键定义，用于检测变化
-  const shortcutsRef = useRef<ShortcutDefinition[]>(SHORTCUTS)
+  const effectiveShortcuts = useMemo(() => getEffectiveShortcuts(keyBindings), [keyBindings])
+
+  const shortcutsRef = useRef<ShortcutDefinition[]>(effectiveShortcuts)
   const conflictsRef = useRef<ShortcutConflict[]>([])
 
-  // 快捷键冲突检测 - 支持外部传入的快捷键列表
-  const detectConflicts = useCallback((shortcuts: ShortcutDefinition[] = SHORTCUTS): ShortcutConflict[] => {
+  const detectConflicts = useCallback((shortcuts: ShortcutDefinition[]): ShortcutConflict[] => {
     const keyMap = new Map<string, string[]>()
 
     shortcuts.forEach(shortcut => {
@@ -160,32 +169,29 @@ export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShow
     return conflicts
   }, [])
 
-  // 检测快捷键变化并重新检测冲突
   useEffect(() => {
-    // 检测快捷键定义是否发生变化
-    const currentShortcuts = JSON.stringify(SHORTCUTS)
+    const currentShortcuts = JSON.stringify(effectiveShortcuts)
     const prevShortcuts = JSON.stringify(shortcutsRef.current)
 
     if (currentShortcuts !== prevShortcuts) {
-      shortcutsRef.current = SHORTCUTS
-      const conflicts = detectConflicts(SHORTCUTS)
+      shortcutsRef.current = effectiveShortcuts
+      const conflicts = detectConflicts(effectiveShortcuts)
       conflictsRef.current = conflicts
 
       if (conflicts.length > 0 && onConflictsDetected) {
         onConflictsDetected(conflicts)
       }
     }
-  }, [SHORTCUTS, detectConflicts, onConflictsDetected])
+  }, [effectiveShortcuts, detectConflicts, onConflictsDetected])
 
-  // 初始化时检测冲突
   useEffect(() => {
-    const conflicts = detectConflicts(SHORTCUTS)
+    const conflicts = detectConflicts(effectiveShortcuts)
     conflictsRef.current = conflicts
 
     if (conflicts.length > 0 && onConflictsDetected) {
       onConflictsDetected(conflicts)
     }
-  }, [detectConflicts, onConflictsDetected])
+  }, [detectConflicts, onConflictsDetected, effectiveShortcuts])
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // 如果正在输入框中，不处理快捷键（除了 Escape）
@@ -207,7 +213,7 @@ export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShow
 
     const shortcut = key.join('+')
 
-    const found = SHORTCUTS.find(s => s.key === shortcut)
+    const found = effectiveShortcuts.find(s => s.key === shortcut)
     if (found) {
       const handler = handlers[found.action]
       if (handler) {
@@ -215,7 +221,7 @@ export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShow
         handler()
       }
     }
-  }, [handlers])
+  }, [handlers, effectiveShortcuts])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

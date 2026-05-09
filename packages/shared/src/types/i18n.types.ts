@@ -100,6 +100,8 @@ export type DialogTranslationKey =
   | 'dialog.ignorePanel.myers'
   | 'dialog.ignorePanel.patience'
   | 'dialog.ignorePanel.histogram'
+  | 'dialog.ignorePanel.addPrefixPlaceholder'
+  | 'dialog.ignorePanel.prefixExists'
   | 'dialog.paste.title'
   | 'dialog.paste.leftText'
   | 'dialog.paste.rightText'
@@ -148,6 +150,11 @@ export type DialogTranslationKey =
   | 'dialog.unsaved.discardAll'
   | 'dialog.unsaved.batchMessage'
   | 'dialog.unsaved.applyToAll'
+  | 'dialog.resetConfirm.title'
+  | 'dialog.resetConfirm.general'
+  | 'dialog.resetConfirm.editor'
+  | 'dialog.resetConfirm.diff'
+  | 'dialog.resetConfirm.shortcuts'
 
 /** 翻译键名 - 合并视图 */
 export type MergeTranslationKey =
@@ -244,6 +251,11 @@ export type ShortcutsGroupTranslationKey =
   | 'shortcuts.group.other'
   | 'shortcuts.hint'
   | 'shortcuts.available'
+  | 'shortcuts.editHint'
+  | 'shortcuts.pressKeys'
+  | 'shortcuts.conflictError'
+  | 'shortcuts.custom'
+  | 'shortcuts.searchPlaceholder'
 
 /** 翻译键名 - 通用 */
 export type CommonTranslationKey =

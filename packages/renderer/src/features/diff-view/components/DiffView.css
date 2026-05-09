@@ -434,33 +434,97 @@
   padding-right: 8px;
 }
 
-/* Comment prefixes textarea in IgnorePanel */
-.comment-prefixes-input {
+/* Comment prefixes tags in IgnorePanel */
+.comment-prefixes-section {
   margin-top: 8px;
   padding-left: 24px;
 }
 
-.setting-subtitle {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+.prefix-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 
-.comment-prefixes-textarea {
-  width: 100%;
-  padding: 6px 8px;
+.prefix-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  line-height: 1.4;
+}
+
+.prefix-tag code {
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.prefix-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 2px;
+  line-height: 1;
+}
+
+.prefix-tag-remove:hover {
+  color: var(--error-color, #ef4444);
+}
+
+.prefix-add-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.prefix-add-input {
+  width: 72px;
+  padding: 2px 6px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--bg-surface);
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 12px;
-  resize: vertical;
+  line-height: 1.4;
 }
 
-.comment-prefixes-textarea:focus {
+.prefix-add-input:focus {
   outline: none;
   border-color: var(--accent-primary);
+}
+
+.prefix-add-input.error {
+  border-color: var(--error-color, #ef4444);
+}
+
+.prefix-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: var(--accent-primary);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.prefix-add-btn:hover {
+  opacity: 0.85;
 }
 
 /* Diff Toolbar */

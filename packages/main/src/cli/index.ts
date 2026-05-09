@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import { readFileSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { registerGuiCommand } from './commands/gui'
 import { registerDiffCommand } from './commands/diff'
 import { registerMergeCommand } from './commands/merge'
@@ -23,13 +26,24 @@ import { registerMergeCommand } from './commands/merge'
  * 参考: TextDiff-DevPlan.md §2.8.1 CLI 模块
  */
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+function getVersion(): string {
+  try {
+    const pkgPath = resolve(__dirname, '../../../package.json')
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+    return pkg.version || '0.0.0'
+  } catch {
+    return '0.0.0'
+  }
+}
+
 const program = new Command()
 
-// 配置程序信息
 program
   .name('textdiff')
   .description('专业文本对比工具 - Professional text comparison tool')
-  .version('1.0.0', '-v, --version', '显示版本号')
+  .version(getVersion(), '-v, --version', '显示版本号')
   .helpOption('-h, --help', '显示帮助信息')
   .configureHelp({
     sortSubcommands: true,

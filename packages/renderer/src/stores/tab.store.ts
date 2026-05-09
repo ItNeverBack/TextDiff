@@ -1,9 +1,10 @@
-import type { FileInfo, DiffResult } from '@shared/types'
+import type { FileInfo, DiffResult, ThreeWayDiffResult } from '@shared/types'
 import type { DirectoryComparison, DirectoryInfo, DirCompareOptions } from '@shared/types/directory.types'
 import { create } from 'zustand'
 import { generateSessionId } from '@shared/utils'
 import { useDiffStore } from './diff.store'
 import { useDirectoryCompareStore } from './directory.store'
+import { useMergeStore } from '../features/merge/stores/merge.store'
 
 export interface TabInfo {
   id: string
@@ -24,6 +25,11 @@ export interface TabInfo {
   expandedPaths?: string[]
   // 视图模式
   dirViewMode?: 'all' | 'diff-only' | 'left-only' | 'right-only'
+  // 三路合并相关字段
+  baseFile?: FileInfo | null
+  mergeResult?: ThreeWayDiffResult | null
+  mergeResolutions?: Array<[string, { type: string; content?: string }]>
+  activeConflictIndex?: number
 }
 
 interface TabState {
@@ -54,6 +60,8 @@ interface TabActions {
   getDirtyTabs: () => { index: number; tab: TabInfo }[]
   saveCurrentDirectoryState: () => void
   restoreDirectoryStateForTab: (index: number) => void
+  saveCurrentMergeState: () => void
+  restoreMergeStateForTab: (index: number) => void
 }
 
 const createNewTab = (): TabInfo => ({
@@ -73,10 +81,12 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
   addTab: () => {
     const { activeIndex, tabs } = get()
 
-    // 保存当前 tab 的目录状态（如果是目录视图）
     const currentTab = tabs[activeIndex]
     if (currentTab?.isDirectoryView) {
       get().saveCurrentDirectoryState()
+    }
+    if (currentTab?.isMergeView) {
+      get().saveCurrentMergeState()
     }
 
     const newTab = createNewTab()
@@ -84,16 +94,22 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       tabs: [...state.tabs, newTab],
       activeIndex: state.tabs.length
     }))
-    // 重置 diffStore 状态，确保新标签页是全新的对比
     const { reset, setViewMode } = useDiffStore.getState()
     reset()
     setViewMode('split')
-    // 重置目录对比状态，确保新标签页不残留上一次的目录对比结果
     const { clearComparison } = useDirectoryCompareStore.getState()
     clearComparison()
+    const { reset: resetMerge } = useMergeStore.getState()
+    resetMerge()
   },
 
   addTabWithFiles: (left, right) => {
+    const { activeIndex, tabs } = get()
+    const currentTab = tabs[activeIndex]
+    if (currentTab?.isMergeView) {
+      get().saveCurrentMergeState()
+    }
+
     const leftName = left.path?.split('/').pop() || left.path?.split('\\').pop() || ''
     const rightName = right.path?.split('/').pop() || right.path?.split('\\').pop() || ''
     const title = `${leftName} vs ${rightName}`
@@ -111,12 +127,12 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       tabs: [...state.tabs, newTab],
       activeIndex: state.tabs.length
     }))
-    // 重置 diffStore 状态
     const { reset } = useDiffStore.getState()
     reset()
-    // 重置目录对比状态
     const { clearComparison } = useDirectoryCompareStore.getState()
     clearComparison()
+    const { reset: resetMerge } = useMergeStore.getState()
+    resetMerge()
   },
 
   addDirectoryTab: (leftPath: string, rightPath: string, comparison?: DirectoryComparison, options?: { startComparison?: boolean }) => {
@@ -125,11 +141,13 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
     const rightName = rightPath ? (rightPath.split('/').pop() || rightPath.split('\\').pop() || '') : '选择目录'
     const title = leftPath && rightPath ? `${leftName} vs ${rightName}` : '目录对比'
 
-    // 保存当前 tab 的目录状态（如果是目录视图）
     const { activeIndex, tabs } = get()
     const currentTab = tabs[activeIndex]
     if (currentTab?.isDirectoryView) {
       get().saveCurrentDirectoryState()
+    }
+    if (currentTab?.isMergeView) {
+      get().saveCurrentMergeState()
     }
 
     const newTab: TabInfo = {
@@ -151,27 +169,28 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       tabs: [...state.tabs, newTab],
       activeIndex: state.tabs.length
     }))
-    // 重置 diffStore 状态
     const { reset, setViewMode } = useDiffStore.getState()
     reset()
     setViewMode('directory')
-    // 只有在需要时才启动目录对比
     if (startComparisonNow && leftPath && rightPath) {
       const { startComparison } = useDirectoryCompareStore.getState()
       startComparison(leftPath, rightPath)
     } else {
-      // 清空目录对比状态，显示目录选择界面
       const { clearComparison } = useDirectoryCompareStore.getState()
       clearComparison()
     }
+    const { reset: resetMerge } = useMergeStore.getState()
+    resetMerge()
   },
 
   addMergeTab: () => {
-    // 保存当前 tab 的目录状态（如果是目录视图）
     const { activeIndex, tabs } = get()
     const currentTab = tabs[activeIndex]
     if (currentTab?.isDirectoryView) {
       get().saveCurrentDirectoryState()
+    }
+    if (currentTab?.isMergeView) {
+      get().saveCurrentMergeState()
     }
 
     const newTab: TabInfo = {
@@ -188,24 +207,26 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
       tabs: [...state.tabs, newTab],
       activeIndex: state.tabs.length
     }))
-    // 切换到合并视图模式
-    const { reset, setViewMode } = useDiffStore.getState()
-    reset()
+    const { reset: resetDiff, setViewMode } = useDiffStore.getState()
+    resetDiff()
     setViewMode('merge')
-    // 清空目录对比状态
     const { clearComparison } = useDirectoryCompareStore.getState()
     clearComparison()
+    const { reset: resetMerge } = useMergeStore.getState()
+    resetMerge()
   },
 
   closeTab: (index) => {
     const { tabs, activeIndex } = get()
     if (tabs.length <= 1) return
 
-    // 如果关闭的是当前激活的 tab 且有目录对比状态，先保存
     if (index === activeIndex) {
       const currentTab = tabs[activeIndex]
       if (currentTab?.isDirectoryView) {
         get().saveCurrentDirectoryState()
+      }
+      if (currentTab?.isMergeView) {
+        get().saveCurrentMergeState()
       }
     }
 
@@ -222,7 +243,6 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
 
     set({ tabs: newTabs, activeIndex: newActiveIndex })
 
-    // 如果关闭后还有 tab，恢复新激活 tab 的状态
     if (newTabs.length > 0) {
       const newTab = newTabs[newActiveIndex]
       if (newTab?.isDirectoryView) {
@@ -232,7 +252,13 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
         clearComparison()
       }
 
-      // 同步 diffStore 状态
+      if (newTab?.isMergeView) {
+        get().restoreMergeStateForTab(newActiveIndex)
+      } else {
+        const { reset: resetMerge } = useMergeStore.getState()
+        resetMerge()
+      }
+
       const { setLeftFile, setRightFile, setViewMode } = useDiffStore.getState()
       setLeftFile(newTab.leftFile)
       setRightFile(newTab.rightFile)
@@ -244,26 +270,31 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
   selectTab: (index) => {
     const { tabs, activeIndex } = get()
     if (index >= 0 && index < tabs.length && index !== activeIndex) {
-      // 保存当前 tab 的目录对比状态
       const currentTab = tabs[activeIndex]
       if (currentTab?.isDirectoryView) {
         get().saveCurrentDirectoryState()
       }
+      if (currentTab?.isMergeView) {
+        get().saveCurrentMergeState()
+      }
 
-      // 切换 tab
       set({ activeIndex: index })
 
-      // 恢复新 tab 的目录对比状态
       const newTab = tabs[index]
       if (newTab?.isDirectoryView) {
         get().restoreDirectoryStateForTab(index)
       } else {
-        // 如果不是目录视图，清空目录对比状态
         const { clearComparison } = useDirectoryCompareStore.getState()
         clearComparison()
       }
 
-      // 同步 diffStore 状态
+      if (newTab?.isMergeView) {
+        get().restoreMergeStateForTab(index)
+      } else {
+        const { reset: resetMerge } = useMergeStore.getState()
+        resetMerge()
+      }
+
       const { setLeftFile, setRightFile, setViewMode } = useDiffStore.getState()
       if (newTab) {
         setLeftFile(newTab.leftFile)
@@ -421,6 +452,52 @@ export const useTabStore = create<TabState & TabActions>((set, get) => ({
     // 恢复视图模式
     if (tab.dirViewMode) {
       dirStore.setViewMode(tab.dirViewMode)
+    }
+  },
+
+  saveCurrentMergeState: () => {
+    const { activeIndex } = get()
+    const mergeStore = useMergeStore.getState()
+
+    if (!mergeStore.baseFile) return
+
+    get().updateTab(activeIndex, {
+      baseFile: mergeStore.baseFile,
+      leftFile: mergeStore.leftFile,
+      rightFile: mergeStore.rightFile,
+      mergeResult: mergeStore.mergeResult,
+      mergeResolutions: Array.from(mergeStore.resolutions.entries()).map(([k, v]) => [
+        k,
+        v.type === 'manual' ? { type: v.type, content: v.content } : { type: v.type }
+      ]),
+      activeConflictIndex: mergeStore.activeConflictIndex,
+      isMergeView: true
+    })
+  },
+
+  restoreMergeStateForTab: (index) => {
+    const { tabs } = get()
+    const tab = tabs[index]
+    if (!tab || !tab.isMergeView) return
+
+    const mergeStore = useMergeStore.getState()
+    mergeStore.setBaseFile(tab.baseFile ?? null)
+    mergeStore.setLeftFile(tab.leftFile ?? null)
+    mergeStore.setRightFile(tab.rightFile ?? null)
+    mergeStore.setMergeResult(tab.mergeResult ?? null)
+    if (tab.activeConflictIndex != null) {
+      mergeStore.setActiveConflictIndex(tab.activeConflictIndex)
+    }
+    if (tab.mergeResolutions) {
+      const resolutions = new Map()
+      for (const [k, v] of tab.mergeResolutions) {
+        if (v.type === 'manual') {
+          resolutions.set(k, { type: 'manual' as const, content: v.content ?? '' })
+        } else {
+          resolutions.set(k, { type: v.type as 'base' | 'left' | 'right' })
+        }
+      }
+      useMergeStore.setState({ resolutions })
     }
   },
 

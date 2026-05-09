@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { useDiffStore } from '../../stores'
+import { useState, useCallback, useEffect } from 'react'
+import { useDiffStore, useSettingsStore } from '../../stores'
 import { useI18n } from '../../hooks/useI18n'
 
 interface IgnorePanelProps {
@@ -14,6 +14,18 @@ export function IgnorePanel({ open, onClose, onApply }: IgnorePanelProps) {
   const [localOptions, setLocalOptions] = useState(options)
   const [newPattern, setNewPattern] = useState('')
   const [patternError, setPatternError] = useState<string | null>(null)
+  const [newPrefix, setNewPrefix] = useState('')
+  const [prefixError, setPrefixError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setLocalOptions(options)
+      setNewPattern('')
+      setPatternError(null)
+      setNewPrefix('')
+      setPrefixError(null)
+    }
+  }, [open, options])
 
   const addPattern = useCallback(() => {
     if (!newPattern.trim()) return
@@ -52,6 +64,31 @@ export function IgnorePanel({ open, onClose, onApply }: IgnorePanelProps) {
     }
   }
 
+  const addPrefix = useCallback(() => {
+    const trimmed = newPrefix.trim()
+    if (!trimmed) return
+
+    const prefixes = localOptions.commentPrefixes || []
+    if (prefixes.includes(trimmed)) {
+      setPrefixError(t('dialog.ignorePanel.prefixExists'))
+      return
+    }
+
+    setLocalOptions({
+      ...localOptions,
+      commentPrefixes: [...prefixes, trimmed]
+    })
+    setNewPrefix('')
+    setPrefixError(null)
+  }, [newPrefix, localOptions, t])
+
+  const removePrefix = useCallback((prefix: string) => {
+    setLocalOptions({
+      ...localOptions,
+      commentPrefixes: (localOptions.commentPrefixes || []).filter(p => p !== prefix)
+    })
+  }, [localOptions])
+
   const handleApply = () => {
     setOptions(localOptions)
     if (onApply) {
@@ -62,14 +99,15 @@ export function IgnorePanel({ open, onClose, onApply }: IgnorePanelProps) {
   }
 
   const handleReset = () => {
+    const { settings } = useSettingsStore.getState()
     setLocalOptions({
-      ...options,
-      ignoreWhitespace: 'leading-trailing',
-      ignoreCase: false,
-      ignoreLineEndings: true,
-      ignoreComments: false,
-      commentPrefixes: ['//', '#', '--', ';', '%'],
-      algorithm: 'myers',
+      ignoreWhitespace: settings.diff.defaultIgnoreWhitespace,
+      ignoreCase: settings.diff.defaultIgnoreCase,
+      ignoreLineEndings: settings.diff.defaultIgnoreLineEndings,
+      ignoreComments: settings.diff.defaultIgnoreComments,
+      commentPrefixes: settings.diff.defaultCommentPrefixes,
+      algorithm: settings.diff.defaultAlgorithm,
+      contextLines: settings.diff.contextLines,
       ignorePatterns: []
     })
     setNewPattern('')
@@ -147,18 +185,49 @@ export function IgnorePanel({ open, onClose, onApply }: IgnorePanelProps) {
               {t('dialog.ignorePanel.ignoreComments')}
             </label>
             {localOptions.ignoreComments && (
-              <div className="comment-prefixes-input">
-                <div className="setting-subtitle">Comment Prefixes (one per line):</div>
-                <textarea
-                  className="comment-prefixes-textarea"
-                  value={localOptions.commentPrefixes?.join('\n') || ''}
-                  onChange={(e) => setLocalOptions({ 
-                    ...localOptions, 
-                    commentPrefixes: e.target.value.split('\n').filter(p => p.trim()) 
-                  })}
-                  placeholder="//&#10;#&#10;--&#10;;&#10;%"
-                  rows={4}
-                />
+              <div className="comment-prefixes-section">
+                <div className="prefix-tags">
+                  {(localOptions.commentPrefixes || []).map((prefix) => (
+                    <span key={prefix} className="prefix-tag">
+                      <code>{prefix}</code>
+                      <button
+                        className="prefix-tag-remove"
+                        onClick={() => removePrefix(prefix)}
+                        aria-label="Remove prefix"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                  <div className="prefix-add-inline">
+                    <input
+                      type="text"
+                      className={`prefix-add-input ${prefixError ? 'error' : ''}`}
+                      placeholder={t('dialog.ignorePanel.addPrefixPlaceholder')}
+                      value={newPrefix}
+                      onChange={(e) => {
+                        setNewPrefix(e.target.value)
+                        setPrefixError(null)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          addPrefix()
+                        }
+                      }}
+                    />
+                    <button className="prefix-add-btn" onClick={addPrefix} aria-label="Add prefix">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                {prefixError && (
+                  <div className="regex-error">{prefixError}</div>
+                )}
               </div>
             )}
           </div>

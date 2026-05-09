@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
-import type { AppSettings, WhitespaceMode } from '@shared/types'
-import { useSettingsStore, useLanguageStore } from '../../stores'
+import { useState, useEffect, useCallback } from 'react'
+import type { AppSettings, WhitespaceMode, KeyBindingMap } from '@shared/types'
+import { DEFAULT_SETTINGS } from '@shared/types'
+import { useSettingsStore, useLanguageStore, useThemeStore } from '../../stores'
 import { useI18n } from '../../hooks/useI18n'
+import { ShortcutEditor } from './ShortcutEditor'
 
 interface SettingsDialogProps {
   open: boolean
@@ -11,11 +13,16 @@ interface SettingsDialogProps {
 type TabType = 'general' | 'editor' | 'diff' | 'shortcuts'
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
-  const { settings, updateSettings, resetSettings, loadFromBackend } = useSettingsStore()
+  const { settings, updateSettings, loadFromBackend } = useSettingsStore()
   const { setLanguage } = useLanguageStore()
+  const { setTheme } = useThemeStore()
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<TabType>('general')
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings)
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
+  const [resetConfirmType, setResetConfirmType] = useState<TabType>('general')
+  const [newPrefix, setNewPrefix] = useState('')
+  const [prefixError, setPrefixError] = useState<string | null>(null)
 
   // 当对话框打开时加载最新设置
   useEffect(() => {
@@ -30,10 +37,32 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     setLocalSettings(settings)
   }, [settings])
 
+  const addPrefix = useCallback(() => {
+    const trimmed = newPrefix.trim()
+    if (!trimmed) return
+
+    const prefixes = localSettings.diff.defaultCommentPrefixes || []
+    if (prefixes.includes(trimmed)) {
+      setPrefixError(t('dialog.ignorePanel.prefixExists'))
+      return
+    }
+
+    updateDiffSettings({ defaultCommentPrefixes: [...prefixes, trimmed] })
+    setNewPrefix('')
+    setPrefixError(null)
+  }, [newPrefix, localSettings.diff.defaultCommentPrefixes, t])
+
+  const removePrefix = useCallback((prefix: string) => {
+    const prefixes = localSettings.diff.defaultCommentPrefixes || []
+    updateDiffSettings({ defaultCommentPrefixes: prefixes.filter(p => p !== prefix) })
+  }, [localSettings.diff.defaultCommentPrefixes])
+
   if (!open) return null
 
   const handleSave = () => {
-    // 同步语言设置
+    if (localSettings.theme) {
+      setTheme(localSettings.theme)
+    }
     if (localSettings.language) {
       setLanguage(localSettings.language)
     }
@@ -41,16 +70,36 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       theme: localSettings.theme,
       language: localSettings.language,
       diff: localSettings.diff,
-      editor: localSettings.editor
+      editor: localSettings.editor,
+      keyBindings: localSettings.keyBindings
     })
     onClose()
   }
 
   const handleReset = () => {
-    if (confirm(t('dialog.confirm'))) {
-      resetSettings()
-      setLocalSettings(useSettingsStore.getState().settings)
+    setResetConfirmType(activeTab)
+    setResetConfirmOpen(true)
+  }
+
+  const handleResetConfirm = () => {
+    switch (resetConfirmType) {
+      case 'general':
+        updateLocalSettings({
+          theme: DEFAULT_SETTINGS.theme,
+          language: DEFAULT_SETTINGS.language,
+        })
+        break
+      case 'editor':
+        updateLocalSettings({ editor: DEFAULT_SETTINGS.editor })
+        break
+      case 'diff':
+        updateLocalSettings({ diff: DEFAULT_SETTINGS.diff })
+        break
+      case 'shortcuts':
+        updateLocalSettings({ keyBindings: {} })
+        break
     }
+    setResetConfirmOpen(false)
   }
 
   const updateLocalSettings = (updates: Partial<AppSettings>) => {
@@ -295,15 +344,48 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                   <div className="settings-item">
                     <label className="settings-label">{t('dialog.settings.commentPrefixes')}</label>
                     <div className="settings-control">
-                      <input
-                        type="text"
-                        className="settings-input"
-                        value={localSettings.diff.defaultCommentPrefixes?.join(', ') || ''}
-                        onChange={(e) => updateDiffSettings({ 
-                          defaultCommentPrefixes: e.target.value.split(',').map(p => p.trim()).filter(Boolean) 
-                        })}
-                        placeholder="//, #, --, ;, %"
-                      />
+                      <div className="prefix-tags">
+                        {(localSettings.diff.defaultCommentPrefixes || []).map((prefix) => (
+                          <span key={prefix} className="prefix-tag">
+                            <code>{prefix}</code>
+                            <button
+                              className="prefix-tag-remove"
+                              onClick={() => removePrefix(prefix)}
+                              aria-label="Remove prefix"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+                        <div className="prefix-add-inline">
+                          <input
+                            type="text"
+                            className={`prefix-add-input ${prefixError ? 'error' : ''}`}
+                            placeholder={t('dialog.ignorePanel.addPrefixPlaceholder')}
+                            value={newPrefix}
+                            onChange={(e) => {
+                              setNewPrefix(e.target.value)
+                              setPrefixError(null)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                addPrefix()
+                              }
+                            }}
+                          />
+                          <button className="prefix-add-btn" onClick={addPrefix} aria-label="Add prefix">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      {prefixError && (
+                        <div className="regex-error">{prefixError}</div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -371,60 +453,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
             {activeTab === 'shortcuts' && (
               <div className="settings-section">
-                <h4 className="settings-section-title">{t('dialog.shortcuts.title')}</h4>
-                <p className="settings-description">
-                  {t('shortcuts.available')}
-                </p>
-
-                <div className="shortcuts-preview">
-                  <div className="shortcut-category">
-                    <h5>{t('shortcuts.group.fileOps')}</h5>
-                    <div className="shortcut-item">
-                      <span>{t('menu.file.openPair')}</span>
-                      <kbd>Ctrl + O</kbd>
-                    </div>
-                    <div className="shortcut-item">
-                      <span>{t('menu.file.saveSession')}</span>
-                      <kbd>Ctrl + S</kbd>
-                    </div>
-                  </div>
-
-                  <div className="shortcut-category">
-                    <h5>{t('shortcuts.group.diffNavigation')}</h5>
-                    <div className="shortcut-item">
-                      <span>{t('toolbar.nextDiff')}</span>
-                      <kbd>F7 / Alt + ↓</kbd>
-                    </div>
-                    <div className="shortcut-item">
-                      <span>{t('toolbar.prevDiff')}</span>
-                      <kbd>F6 / Alt + ↑</kbd>
-                    </div>
-                    <div className="shortcut-item">
-                      <span>{t('toolbar.firstDiff')}</span>
-                      <kbd>Alt + Home</kbd>
-                    </div>
-                    <div className="shortcut-item">
-                      <span>{t('toolbar.lastDiff')}</span>
-                      <kbd>Alt + End</kbd>
-                    </div>
-                  </div>
-
-                  <div className="shortcut-category">
-                    <h5>{t('shortcuts.group.viewMode')}</h5>
-                    <div className="shortcut-item">
-                      <span>{t('toolbar.splitView')}</span>
-                      <kbd>Ctrl + 1</kbd>
-                    </div>
-                    <div className="shortcut-item">
-                      <span>{t('toolbar.unifiedView')}</span>
-                      <kbd>Ctrl + 2</kbd>
-                    </div>
-                    <div className="shortcut-item">
-                      <span>{t('toolbar.collapseUnchanged')}</span>
-                      <kbd>Ctrl + Shift + C</kbd>
-                    </div>
-                  </div>
-                </div>
+                <ShortcutEditor
+                  keyBindings={localSettings.keyBindings}
+                  onChange={(keyBindings: KeyBindingMap) => updateLocalSettings({ keyBindings })}
+                />
               </div>
             )}
           </div>
@@ -444,6 +476,34 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           </div>
         </div>
       </div>
+
+      {resetConfirmOpen && (
+        <div className="confirm-overlay" onClick={() => setResetConfirmOpen(false)}>
+          <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
+            <div className="confirm-dialog-header">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning-color, #f59e0b)" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <h4 className="confirm-dialog-title">{t('dialog.resetConfirm.title')}</h4>
+            </div>
+            <div className="confirm-dialog-body">
+              <p className="confirm-dialog-message">
+                {t(`dialog.resetConfirm.${resetConfirmType}` as const)}
+              </p>
+            </div>
+            <div className="confirm-dialog-footer">
+              <button className="btn-secondary" onClick={() => setResetConfirmOpen(false)}>
+                {t('dialog.cancel')}
+              </button>
+              <button className="btn-primary btn-danger" onClick={handleResetConfirm}>
+                {t('dialog.reset')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

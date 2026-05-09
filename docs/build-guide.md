@@ -184,17 +184,43 @@ gh auth status
 gh auth login
 ```
 
-使用 `gh release create` 将构建产物上传到 GitHub Release：
+使用 `gh release create` 将构建产物上传到 GitHub Release。
+
+#### 8.1 准备 Release Notes 文件
+
+在项目根目录创建 `release-notes.md`，填写新版本相较于上一版本的变更内容：
+
+```markdown
+## TextDiff vx.x.x
+
+### 新增功能
+
+- (示例) 新增 XXX 功能
+- (示例) 支持 XXX 操作
+
+### 问题修复
+
+- (示例) 修复了 XXX 场景下的崩溃问题
+- (示例) 修复了 XXX 显示异常的问题
+
+### 改进优化
+
+- (示例) 优化了 XXX 的性能表现
+- (示例) 改进了 XXX 的用户体验
+```
+
+#### 8.2 发布 Release
 
 ```powershell
-gh release create vx.x.x "dist/vx.x.x/TextDiff-x.x.x-win.tar.gz" "dist/vx.x.x/textdiff_x.x.x_amd64.deb" --title "TextDiff vx.x.x" --notes "TextDiff vx.x.x release."
+gh release create vx.x.x "dist/vx.x.x/TextDiff-x.x.x-win.tar.gz" "dist/vx.x.x/textdiff_x.x.x_amd64.deb" --title "TextDiff vx.x.x" --notes-file release-notes.md
 ```
 
 > **注意**：
 > - 命令中的 `x.x.x` 需替换为实际版本号。
+> - `--notes-file` 从 `release-notes.md` 读取 Release Notes，内容应包含相较于上一版本的新增功能、修复问题和改进优化。
 > - 如果该 tag 尚不存在，`gh` 会自动在默认分支上创建对应的 Git tag。
-> - 如需添加更详细的 Release Notes，可使用 `--notes-file <文件路径>` 从文件读取。
 > - 上传较大文件（>100MB）时可能需要较长时间，请耐心等待。
+> - 发布完成后可删除临时文件：`Remove-Item release-notes.md -Force`。
 
 发布成功后，可在以下地址查看：
 

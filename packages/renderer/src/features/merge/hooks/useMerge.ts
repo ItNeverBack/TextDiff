@@ -46,14 +46,31 @@ export function useMerge() {
 
   const saveResult = useCallback(async () => {
     const content = buildResult()
+    const sourceFile = leftFile || baseFile || rightFile
+    let defaultPath: string | undefined
+    const filters: Array<{ name: string; extensions: string[] }> = []
+
+    if (sourceFile?.path) {
+      const ext = sourceFile.path.includes('.')
+        ? '.' + sourceFile.path.split('.').pop()!
+        : ''
+      const dir = sourceFile.path.substring(0, sourceFile.path.lastIndexOf('\\') + 1 || sourceFile.path.lastIndexOf('/') + 1)
+      defaultPath = dir + 'tmp' + ext
+      if (ext) {
+        filters.push({ name: ext.substring(1).toUpperCase() + ' 文件', extensions: [ext.substring(1)] })
+      }
+    }
+    filters.push({ name: '所有文件', extensions: ['*'] })
+
     const path = await api.showSaveDialog({
       title: '保存合并结果',
-      filters: [{ name: '所有文件', extensions: ['*'] }]
+      defaultPath,
+      filters
     })
     if (path) {
       await api.writeFile(path, content)
     }
-  }, [buildResult])
+  }, [buildResult, leftFile, baseFile, rightFile])
 
   const unresolvedCount = mergeResult
     ? mergeResult.conflicts.filter(c => !resolutions.has(c.id)).length

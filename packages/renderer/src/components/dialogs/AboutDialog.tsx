@@ -11,8 +11,8 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
   if (!open) return null
 
   return (
-    <div className="overlay">
-      <div className="panel about-panel">
+    <div className="overlay" onClick={onClose}>
+      <div className="panel about-panel" onClick={e => e.stopPropagation()}>
         <div className="panel-header">
           <h3 className="panel-title">{t('menu.help.about')}</h3>
           <button className="panel-close" onClick={onClose}>×</button>
@@ -40,11 +40,11 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           </div>
 
           <h2 className="about-title">{t('app.name')}</h2>
-          <p className="about-version">{t('app.version')}: 1.0.0</p>
+          <p className="about-version">{t('app.version')}: {__APP_VERSION__}</p>
           <p className="about-description">{t('app.description')}</p>
 
           <div className="about-features">
-            <h4>Features:</h4>
+            <h4>Features</h4>
             <ul>
               <li>{t('menu.view.splitView')} / {t('menu.view.unifiedView')}</li>
               <li>{t('menu.view.directoryView')}</li>
