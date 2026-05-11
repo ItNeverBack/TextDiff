@@ -12,8 +12,13 @@
 - **撤销/重做** — 完整的文件操作历史管理
 - **Monaco 编辑器** — 内置 Monaco Diff Editor，语法高亮
 - **报告导出** — HTML / JSON / CSV / XML 格式
+- **快捷键自定义** — 可视化快捷键编辑器，按功能分组自定义按键绑定
+- **多标签页** — 多文件同时对比，关闭未保存时提醒（支持批量处理）
+- **Diff 缓存** — 智能缓存与增量计算，大文件性能优化
+- **虚拟滚动** — 大型目录树高性能渲染，对象池优化
 - **多语言** — 中文 / 英文
 - **深色模式** — 跟随系统或手动切换
+- **命令行模式** — `textdiff diff`、`textdiff merge`、`textdiff gui`
 
 ## 下载安装
 
@@ -35,6 +40,16 @@ sudo apt-get install -f  # 安装依赖
 
 ```bash
 sudo dpkg -r textdiff
+```
+
+## 命令行使用
+
+```bash
+textdiff diff <file1> <file2>       # 对比两个文件（输出 unified diff）
+textdiff diff <file1> <file2> --side-by-side  # 并排输出
+textdiff merge <base> <left> <right> # 三路合并
+textdiff gui                         # 启动图形界面
+textdiff gui <file1> <file2>         # 启动图形界面并打开文件
 ```
 
 ## 开发
@@ -68,7 +83,7 @@ npm run dist      # 构建并打包（产物在 dist/v<版本号>/ 下）
 
 ```
 packages/
-├── main/       # Electron 主进程（diff 引擎、文件 I/O、IPC、CLI）
+├── main/       # Electron 主进程（diff 引擎、文件 I/O、IPC、CLI、目录对比）
 ├── renderer/   # React 渲染进程（UI、状态管理、Monaco 编辑器）
 └── shared/     # 共享类型、常量、工具函数
 ```
@@ -82,6 +97,7 @@ packages/
 - **样式**: Tailwind CSS + CSS Custom Properties
 - **数据库**: better-sqlite3
 - **测试**: Vitest
+- **CLI**: Commander.js
 
 ## License
 

@@ -19,6 +19,11 @@ Core implementation complete — diff engine (Myers/Patience/Histogram), CLI mod
 - **Filter Store**: Dedicated state management for directory filtering with presets
 - **Recent Directories**: Tracking of recently used directories with repository and database table
 
+### Recent Additions (Week 15+)
+- **Unsaved Changes Dialog**: Confirmation dialog when closing tabs with unsaved changes, supports save/discard/cancel with "apply to all" option
+- **Shortcut Editor**: Visual keyboard shortcut customization with editable key bindings per action group
+- **DirectoryTree Component**: Recursive tree rendering component extracted from DirectoryTreePanel for reusability
+
 ## Commands
 
 ```bash
@@ -241,6 +246,8 @@ Adding a new API method requires changes in all three layers. Channel names are 
 | `cli:open-files` | main → renderer | Files passed via CLI to GUI |
 | `diff:progress` / `complete` / `error` | main → renderer | Large file diff progress |
 | `sync:progress` | main → renderer | Sync operation progress |
+| `app:check-unsaved` | main → renderer | Check for unsaved changes before close |
+| `app:close-confirmed` | renderer → main | Confirm close after unsaved changes check |
 
 ## State Management (Renderer)
 
@@ -495,7 +502,7 @@ packages/
 │   ├── App.tsx            # Root component
 │   ├── components/        # Layout, dialogs, welcome
 │   │   ├── layout/        # MenuBar, Toolbar, TabBar, StatusBar, FileDropZone
-│   │   ├── dialogs/       # PasteDialog, SearchDialog, SettingsDialog, SessionListDialog, ShortcutsHelp, IgnorePanel, AboutDialog
+│   │   ├── dialogs/       # PasteDialog, SearchDialog, SettingsDialog, SessionListDialog, ShortcutsHelp, IgnorePanel, AboutDialog, UnsavedChangesDialog, ShortcutEditor
 │   │   ├── language/      # LanguageSwitcher
 │   │   ├── ErrorBoundary.tsx
 │   │   └── welcome/       # WelcomeView
