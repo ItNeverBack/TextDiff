@@ -159,6 +159,13 @@ export function registerDirectoryHandlers(): void {
   // 打开目录选择对话框
   ipcMain.handle('directory:open', async (event, side: 'left' | 'right'): Promise<string | null> => {
     const win = BrowserWindow.fromWebContents(event.sender)!
+
+    // §修复 Linux 下对话框可能显示在主窗口下层的问题
+    // 使用 moveTop() 而不是 focus()，避免触发 "窗口已就绪" 的系统通知
+    if (process.platform === 'linux') {
+      win.moveTop()
+    }
+
     const result = await dialog.showOpenDialog(win, {
       title: side === 'left' ? '选择左侧目录' : '选择右侧目录',
       defaultPath: lastDirectoryParent,

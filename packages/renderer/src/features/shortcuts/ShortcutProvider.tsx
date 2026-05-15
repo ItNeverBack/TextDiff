@@ -34,8 +34,11 @@ export function getEffectiveShortcuts(keyBindings: Record<string, string>): Shor
 export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShowSettings, onShowSessionHistory, onCloseOverlay, onCloseTab, onConflictsDetected }: ShortcutProviderProps) {
   const keyBindings = useSettingsStore(s => s.settings.keyBindings)
   const { toggleTheme } = useTheme()
-  const { nextChunk, prevChunk, firstChunk, lastChunk, toggleCollapse, swapFiles, viewMode: _viewMode, setViewMode, setLeftFile, setRightFile, leftFile, rightFile } = useDiffStore()
+  const { nextChunk, prevChunk, firstChunk, lastChunk, toggleCollapse, swapFiles, viewMode: _viewMode, setViewMode, setLeftFile, setRightFile, leftFile, rightFile, diffResult } = useDiffStore()
   const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles, swapActiveTabFiles } = useTabStore()
+
+  // §修复：只有在双栏视图且有变化时才启用折叠快捷键
+  const canCollapse = _viewMode === 'split' && diffResult && diffResult.chunks.length > 0
   const { saveSession } = useSessionStore()
 
   const openFile = useCallback(async (side: 'left' | 'right') => {
@@ -117,7 +120,12 @@ export function ShortcutProvider({ children, onPasteDialog, onShowSearch, onShow
     viewMerge: () => {
       setViewMode('merge')
     },
-    toggleCollapse: () => toggleCollapse(),
+    // §修复：只有在双栏视图且有变化时才响应折叠快捷键
+    toggleCollapse: () => {
+      if (canCollapse) {
+        toggleCollapse()
+      }
+    },
     toggleTheme: () => toggleTheme(),
     pasteText: () => onPasteDialog?.(),
     openSettings: () => {

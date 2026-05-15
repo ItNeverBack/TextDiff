@@ -24,6 +24,7 @@ interface DiffActions {
   setViewMode: (mode: ViewMode) => void
   setDiffResult: (result: DiffResult | null) => void
   setIsComputing: (computing: boolean) => void
+  setActiveChunkIndex: (index: number) => void
   navigateToChunk: (index: number) => void
   nextChunk: () => void
   prevChunk: () => void
@@ -37,21 +38,23 @@ interface DiffActions {
 }
 
 function getOptionsFromSettings(): DiffOptions {
-  const { settings } = useSettingsStore.getState()
+  const state = useSettingsStore.getState()
+  const settings = state?.settings || DEFAULT_SETTINGS
   return {
-    ignoreWhitespace: settings.diff.defaultIgnoreWhitespace,
-    ignoreCase: settings.diff.defaultIgnoreCase,
-    ignoreLineEndings: settings.diff.defaultIgnoreLineEndings,
+    ignoreWhitespace: settings.diff?.defaultIgnoreWhitespace ?? DEFAULT_SETTINGS.diff.defaultIgnoreWhitespace,
+    ignoreCase: settings.diff?.defaultIgnoreCase ?? DEFAULT_SETTINGS.diff.defaultIgnoreCase,
+    ignoreLineEndings: settings.diff?.defaultIgnoreLineEndings ?? DEFAULT_SETTINGS.diff.defaultIgnoreLineEndings,
     ignorePatterns: [],
-    ignoreComments: settings.diff.defaultIgnoreComments,
-    commentPrefixes: settings.diff.defaultCommentPrefixes,
-    algorithm: settings.diff.defaultAlgorithm,
-    contextLines: settings.diff.contextLines
+    ignoreComments: settings.diff?.defaultIgnoreComments ?? DEFAULT_SETTINGS.diff.defaultIgnoreComments,
+    commentPrefixes: settings.diff?.defaultCommentPrefixes ?? DEFAULT_SETTINGS.diff.defaultCommentPrefixes,
+    algorithm: settings.diff?.defaultAlgorithm ?? DEFAULT_SETTINGS.diff.defaultAlgorithm,
+    contextLines: settings.diff?.contextLines ?? DEFAULT_SETTINGS.diff.contextLines
   }
 }
 
 function getIsCollapsedFromSettings(): boolean {
-  return useSettingsStore.getState().settings.diff.foldUnchanged
+  const state = useSettingsStore.getState()
+  return state?.settings?.diff?.foldUnchanged ?? DEFAULT_SETTINGS.diff.foldUnchanged
 }
 
 const initialOptions: DiffOptions = {
@@ -94,6 +97,8 @@ export const useDiffStore = create<DiffState & DiffActions>((set, get) => ({
   setDiffResult: (result) => set({ diffResult: result }),
   
   setIsComputing: (computing) => set({ isComputing: computing }),
+  
+  setActiveChunkIndex: (index) => set({ activeChunkIndex: index }),
   
   navigateToChunk: (index) => {
     const { diffResult } = get()

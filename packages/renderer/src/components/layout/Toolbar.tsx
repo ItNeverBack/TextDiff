@@ -99,9 +99,14 @@ export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onSh
   }
 
   const chunkCount = diffResult?.chunks.length || 0
+  const hasChanges = chunkCount > 0
+  const isSplitView = viewMode === 'split'
 
   // 判断当前是否在文件对比模式
   const isFileDiffMode = viewMode === 'split' || viewMode === 'unified'
+
+  // §修复：只有在双栏视图且有变化时才启用折叠按钮
+  const canCollapse = isSplitView && hasChanges
 
   return (
     <div className="toolbar" ref={toolbarRef} onWheel={handleWheel}>
@@ -266,18 +271,21 @@ export function Toolbar({ onPasteDialog: _onPasteDialog, onShowIgnorePanel, onSh
 
           <div className="toolbar-separator" />
 
-          <div className="toolbar-group">
-            <button 
-              className={`toolbar-btn ${isCollapsed ? 'active' : ''}`} 
-              onClick={toggleCollapse}
-              title={`${t('toolbar.collapseUnchanged')} (Ctrl+Shift+C)`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 9l7-7 7 7M5 15l7 7 7-7"/>
-              </svg>
-              {t('toolbar.collapseUnchanged')}
-            </button>
-          </div>
+          {/* §修复：只在双栏视图且有变化时显示折叠按钮 */}
+          {canCollapse && (
+            <div className="toolbar-group">
+              <button
+                className={`toolbar-btn ${isCollapsed ? 'active' : ''}`}
+                onClick={toggleCollapse}
+                title={`${t('toolbar.collapseUnchanged')} (Ctrl+Shift+C)`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 9l7-7 7 7M5 15l7 7 7-7"/>
+                </svg>
+                {t('toolbar.collapseUnchanged')}
+              </button>
+            </div>
+          )}
         </>
       )}
 

@@ -21,10 +21,13 @@ interface MenuBarProps {
 export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory, onShowSettings, onShowShortcuts, onShowAbout, onShowMergeView, onShowDirectoryView: _onShowDirectoryView, onOpenDirectoryPair, onSetSplitView, onSetUnifiedView }: MenuBarProps) {
   const { theme, toggleTheme } = useTheme()
   const { addTab, closeTab, tabs, activeIndex, setActiveTabFiles } = useTabStore()
-  const { setLeftFile, setRightFile, toggleCollapse } = useDiffStore()
+  const { setLeftFile, setRightFile, toggleCollapse, diffResult, viewMode } = useDiffStore()
   const { t } = useI18n()
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const menuBarRef = useRef<HTMLDivElement>(null)
+
+  // §修复：只有在双栏视图且有变化时才启用折叠菜单
+  const canCollapse = viewMode === 'split' && diffResult && diffResult.chunks.length > 0
 
   // 点击外部关闭菜单
   useEffect(() => {
@@ -122,10 +125,13 @@ export function MenuBar({ onPasteDialog, onShowIgnorePanel, onShowSessionHistory
         >
           <span>{t('menu.edit')}</span>
           <div className="menu-dropdown">
-            <div className="menu-dropdown-item" onClick={() => { toggleCollapse(); setActiveMenu(null); }}>
-              <span className="menu-label">{t('menu.edit.collapseUnchanged')}</span>
-              <span className="menu-shortcut">Ctrl+Shift+C</span>
-            </div>
+            {/* §修复：只有在双栏视图且有变化时才显示折叠菜单 */}
+            {canCollapse && (
+              <div className="menu-dropdown-item" onClick={() => { toggleCollapse(); setActiveMenu(null); }}>
+                <span className="menu-label">{t('menu.edit.collapseUnchanged')}</span>
+                <span className="menu-shortcut">Ctrl+Shift+C</span>
+              </div>
+            )}
           </div>
         </div>
 

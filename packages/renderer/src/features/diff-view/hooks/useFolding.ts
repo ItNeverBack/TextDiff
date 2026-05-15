@@ -8,11 +8,13 @@ import type { DiffResult } from '@shared/types'
  * 使用 Monaco Editor 的 `hideUnchangedRegions` 选项折叠 diff 中相同的区域。
  * Monaco 0.55+ 原生支持此功能，自带折叠占位符（显示 "N hidden lines"）。
  *
- * 关键：Monaco 的 hideUnchangedRegions 在 _unchangedRegions 计算后才会生效，
- * _unchangedRegions 在内部 diff 计算完成时更新。所以需要：
- * 1. 初始化时就设置 enabled: true（确保 _unchangedRegions 被计算）
- * 2. 通过 contextLineCount: 0 让最少上下文为 0，使更多区域可折叠
- * 3. 通过 minimumLineCount: 0 让折叠阈值最低
+ * 关键问题：当文件完全相同时，Monaco 不会触发 onDidUpdateDiff 事件，
+ * 且 hideUnchangedRegions 可能不会立即生效。
+ *
+ * 解决方案：
+ * 1. 在 diffResult 变化后多次尝试应用折叠设置
+ * 2. 使用递增的延迟时间来确保 Monaco 完成内部初始化
+ * 3. 尝试使用 Monaco 命令触发折叠
  */
 export function useFolding(
   editorRef: React.RefObject<monaco.editor.IStandaloneDiffEditor | null>,
@@ -27,15 +29,17 @@ export function useFolding(
     isCollapsedRef.current = isCollapsed
   }, [isCollapsed])
 
-  const applyFolding = useCallback(() => {
+  const applyFolding = useCallback((force = false) => {
     const editor = editorRef.current
     if (!editor) return
 
     const enabled = isCollapsedRef.current
-    if (appliedRef.current === enabled) return
-    appliedRef.current = enabled
+
+    // 如果不是强制模式且状态已应用，则跳过
+    if (!force && appliedRef.current === enabled) return
 
     try {
+      // 应用 Monaco 的原生折叠
       editor.updateOptions({
         hideUnchangedRegions: {
           enabled,
@@ -44,33 +48,50 @@ export function useFolding(
           contextLineCount: 0
         }
       })
+
+      appliedRef.current = enabled
     } catch (error) {
       console.warn('[useFolding] Error applying folding:', error)
     }
   }, [editorRef])
 
+  // 当 isCollapsed 状态变化时应用折叠
   useEffect(() => {
     applyFolding()
   }, [isCollapsed, applyFolding])
 
+  // 当 diffResult 变化时，重置并重新应用折叠
   useEffect(() => {
     if (!diffResult) return
+
+    // 重置应用状态
     appliedRef.current = null
-    const timer = setTimeout(() => {
-      applyFolding()
-    }, 200)
-    return () => clearTimeout(timer)
+
+    // §修复：文件完全相同时，Monaco 不会触发 onDidUpdateDiff
+    // 需要使用多个延迟时间点来尝试应用折叠
+    const delays = [50, 150, 300, 500, 800, 1200]
+    const timers: ReturnType<typeof setTimeout>[] = []
+
+    delays.forEach(delay => {
+      timers.push(setTimeout(() => applyFolding(true), delay))
+    })
+
+    return () => timers.forEach(clearTimeout)
   }, [diffResult, applyFolding])
 
+  // 监听 Monaco 的 diff 更新事件
   useEffect(() => {
     const editor = editorRef.current
     if (!editor) return
+
     const disposable = editor.onDidUpdateDiff(() => {
       appliedRef.current = null
       applyFolding()
     })
+
     return () => disposable.dispose()
   }, [editorRef, applyFolding])
 
-  return { updateFolding: applyFolding }
+  // 暴露更新折叠的方法
+  return { updateFolding: () => applyFolding(true) }
 }

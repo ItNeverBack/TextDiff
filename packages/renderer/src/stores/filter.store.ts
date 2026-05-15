@@ -492,16 +492,20 @@ function matchesFilter(
       const globFilter = filter as GlobFilter;
       return globFilter.patterns.some(pattern => {
         // 简化的 glob 匹配
-        const regex = new RegExp(
-          '^' +
-          pattern
-            .replace(/\*\*/g, '{{GLOBSTAR}}')
-            .replace(/\*/g, '[^/]*')
-            .replace(/\?/g, '.')
-            .replace(/{{GLOBSTAR}}/g, '.*')
-            .replace(/\./g, '\\.') +
-          '$'
-        );
+        // 1. 保护 ** 占位符
+        // 2. 替换 * 为 [^/]* (匹配非斜杠字符)
+        // 3. 替换 ? 为 .
+        // 4. 转义 . 为 \.
+        // 5. 恢复 ** 为 .* (匹配任意字符包括/)
+        // 6. 开头的 **/ 改为 (?:.*/)? 以匹配"任何目录下"或"根目录"
+        const regexPattern = pattern
+          .replace(/\*\*/g, '{{GLOBSTAR}}')
+          .replace(/\*/g, '[^/]*')
+          .replace(/\?/g, '.')
+          .replace(/\./g, '\\.')
+          .replace(/\{\{GLOBSTAR\}\}\//g, '(?:.*/)?')  // **/ 开头 = 任何目录下
+          .replace(/\{\{GLOBSTAR\}\}/g, '.*');          // 其他 ** = 任意字符
+        const regex = new RegExp('^' + regexPattern + '$');
         return regex.test(entry.relativePath);
       });
     }

@@ -11,7 +11,10 @@ directories:
   buildResources: build
 
 # 应用图标
-icon: build/icon.png
+# Linux 使用 build/icons 目录中的多尺寸图标
+# Windows 使用 build/icon.ico
+# macOS 使用 build/icon.icns
+icon: build/icons
 
 # 打包文件配置
 files:
@@ -37,6 +40,7 @@ win:
         - x64
   publisherName: TextDiff Team
   legalTrademarks: Copyright © 2026 TextDiff Team
+  icon: build/icon.ico
 
 # Linux 配置
 linux:
@@ -49,6 +53,7 @@ linux:
   vendor: TextDiff
   synopsis: Professional text comparison tool
   description: A powerful text comparison tool for Linux with support for file diff, directory diff, and three-way merge.
+  icon: build/icons
   desktop:
     Name: TextDiff
     Comment: Professional text comparison tool

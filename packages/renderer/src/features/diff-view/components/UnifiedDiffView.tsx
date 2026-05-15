@@ -1,21 +1,16 @@
 import { useRef, useCallback, useMemo, useState, useEffect } from 'react'
-import { useTabStore, useSearchStore, useSettingsStore, useDiffStore } from '@renderer/stores'
+import { useTabStore, useSearchStore, useSettingsStore } from '@renderer/stores'
 import type { DiffLine } from '@shared/types'
 import { InlineDiff } from './InlineDiff'
-import { FoldedLine } from './FoldedLine'
 import { useI18n } from '@renderer/hooks/useI18n'
 import './DiffView.css'
-
-const CONTEXT_LINES = 3
 
 const BASE_FONT_SIZE = 13
 const BASE_LINE_HEIGHT = 21
 const OVERSCAN = 10 // 上下额外渲染的行数
 
-/** 虚拟滚动中的显示项：普通行或折叠占位符 */
-type DisplayItem =
-  | { kind: 'line'; line: DiffLine; lineIndex: number }
-  | { kind: 'folded'; count: number }
+/** 虚拟滚动中的显示项 */
+type DisplayItem = { kind: 'line'; line: DiffLine; lineIndex: number }
 
 /**
  * 统一差异视图中的单行组件
@@ -133,9 +128,6 @@ export function UnifiedDiffView() {
   // §Week 12: 搜索高亮状态
   const { highlightedLineIndex, highlightedRanges, matches, currentMatchIndex } = useSearchStore()
 
-  // 折叠状态
-  const { isCollapsed, toggleCollapse } = useDiffStore()
-
   // 字体设置
   const { settings } = useSettingsStore()
   const { fontSize } = settings.editor
@@ -148,52 +140,10 @@ export function UnifiedDiffView() {
   const lines = activeTab?.diffResult?.lines || []
   const stats = activeTab?.diffResult?.stats
 
-  // §2.4.4 折叠处理：将连续的 equal 行折叠为占位符
+  // §2.4.4 简化处理：统一视图不提供了折叠功能，直接显示所有行
   const displayItems = useMemo((): DisplayItem[] => {
-    if (!isCollapsed) {
-      return lines.map((line, i) => ({ kind: 'line' as const, line, lineIndex: i }))
-    }
-
-    const result: DisplayItem[] = []
-    let foldStart = -1
-    let foldCount = 0
-
-    const flushFold = (nextIdx: number) => {
-      if (foldStart === -1) return
-      if (foldCount > CONTEXT_LINES * 2) {
-        // 保留前 CONTEXT_LINES 行
-        for (let j = foldStart; j < foldStart + CONTEXT_LINES; j++) {
-          result.push({ kind: 'line', line: lines[j], lineIndex: j })
-        }
-        // 折叠占位符
-        result.push({ kind: 'folded', count: foldCount - CONTEXT_LINES * 2 })
-        // 保留后 CONTEXT_LINES 行
-        for (let j = nextIdx - CONTEXT_LINES; j < nextIdx; j++) {
-          result.push({ kind: 'line', line: lines[j], lineIndex: j })
-        }
-      } else {
-        for (let j = foldStart; j < nextIdx; j++) {
-          result.push({ kind: 'line', line: lines[j], lineIndex: j })
-        }
-      }
-      foldStart = -1
-      foldCount = 0
-    }
-
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].type === 'equal') {
-        if (foldStart === -1) foldStart = i
-        foldCount++
-      } else {
-        flushFold(i)
-        result.push({ kind: 'line', line: lines[i], lineIndex: i })
-      }
-    }
-    // 处理末尾的 equal 区域
-    flushFold(lines.length)
-
-    return result
-  }, [lines, isCollapsed])
+    return lines.map((line, i) => ({ kind: 'line' as const, line, lineIndex: i }))
+  }, [lines])
 
   // 虚拟滚动状态
   const [scrollTop, setScrollTop] = useState(0)
@@ -259,7 +209,6 @@ export function UnifiedDiffView() {
   const visibleItems = useMemo(() => {
     return displayItems.slice(visibleRange.startIdx, visibleRange.endIdx).map((item, index) => ({
       item,
-      displayIdx: visibleRange.startIdx + index,
       offset: (visibleRange.startIdx + index) * lineHeight
     }))
   }, [displayItems, visibleRange, lineHeight])
@@ -304,24 +253,8 @@ export function UnifiedDiffView() {
         style={{ overflow: 'auto', position: 'relative' }}
       >
         <div style={{ height: totalHeight, position: 'relative' }}>
-          {visibleItems.map(({ item, displayIdx, offset }) => {
-            if (item.kind === 'folded') {
-              return (
-                <FoldedLine
-                  key={`fold-${displayIdx}`}
-                  count={item.count}
-                  onClick={toggleCollapse}
-                  style={{
-                    position: 'absolute',
-                    top: offset,
-                    height: lineHeight,
-                    left: 0,
-                    right: 0
-                  }}
-                />
-              )
-            }
-
+          {visibleItems.map(({ item, offset }) => {
+            // §修复：统一视图不提供折叠功能，只渲染行
             const { line, lineIndex } = item
             // §Week 12: 检查当前行是否是高亮行
             const isSearchHighlighted = highlightedLineIndex === lineIndex
