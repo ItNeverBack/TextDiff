@@ -133,11 +133,13 @@ export async function computeDiff(
   // 合并相邻的 delete + insert 为 replace
   const diffOps = mergeReplaceOperations(rawDiffOps)
 
-  // 构建差异行（使用原始内容）
+  // 构建差异行（使用原始内容，行号映射回原始文件行号）
   const diffLines = buildDiffLines(
     leftPreprocessResult.filtered,
     rightPreprocessResult.filtered,
-    diffOps
+    diffOps,
+    leftPreprocessResult.indices,
+    rightPreprocessResult.indices
   )
 
   // 计算内联差异（字符级）
@@ -170,7 +172,9 @@ interface DiffOp {
 function buildDiffLines(
   leftLines: string[],
   rightLines: string[],
-  diffOps: DiffOp[]
+  diffOps: DiffOp[],
+  leftIndices: number[],
+  rightIndices: number[]
 ): DiffLine[] {
   const result: DiffLine[] = []
 
@@ -185,22 +189,22 @@ function buildDiffLines(
 
     switch (op.type) {
       case 'equal':
-        line.leftLineNo = op.leftIndex + 1
-        line.rightLineNo = op.rightIndex + 1
+        line.leftLineNo = leftIndices[op.leftIndex] + 1
+        line.rightLineNo = rightIndices[op.rightIndex] + 1
         line.leftContent = leftLines[op.leftIndex]
         line.rightContent = rightLines[op.rightIndex]
         break
       case 'delete':
-        line.leftLineNo = op.leftIndex + 1
+        line.leftLineNo = leftIndices[op.leftIndex] + 1
         line.leftContent = leftLines[op.leftIndex]
         break
       case 'insert':
-        line.rightLineNo = op.rightIndex + 1
+        line.rightLineNo = rightIndices[op.rightIndex] + 1
         line.rightContent = rightLines[op.rightIndex]
         break
       case 'replace':
-        line.leftLineNo = op.leftIndex + 1
-        line.rightLineNo = op.rightIndex + 1
+        line.leftLineNo = leftIndices[op.leftIndex] + 1
+        line.rightLineNo = rightIndices[op.rightIndex] + 1
         line.leftContent = leftLines[op.leftIndex]
         line.rightContent = rightLines[op.rightIndex]
         break

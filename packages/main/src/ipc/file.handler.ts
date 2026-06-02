@@ -11,8 +11,6 @@ export function registerFileHandlers(): void {
   ipcMain.handle('file:open', async (event, side: 'left' | 'right'): Promise<FileInfo | null> => {
     const win = BrowserWindow.fromWebContents(event.sender)!
 
-    // §修复 Linux 下对话框可能显示在主窗口下层的问题
-    // 使用 moveTop() 而不是 focus()，避免触发 "窗口已就绪" 的系统通知
     if (process.platform === 'linux') {
       win.moveTop()
     }

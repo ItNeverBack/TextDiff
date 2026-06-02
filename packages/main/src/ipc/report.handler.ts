@@ -45,6 +45,9 @@ export function registerReportHandlers(): void {
       const fullFileName = `${fileName}.${extension}`
 
       const win = BrowserWindow.fromWebContents(event.sender)!
+      if (process.platform === 'linux') {
+        win.moveTop()
+      }
       const result = await dialog.showSaveDialog(win, {
         title: '保存对比报告',
         defaultPath: fullFileName,
@@ -163,6 +166,9 @@ async function saveReport(
     const extension = getFileExtension(format)
     const fileName = `comparison-report-${comparisonId || Date.now()}.${extension}`
 
+    if (process.platform === 'linux' && parentWindow) {
+      parentWindow.moveTop()
+    }
     const result = await dialog.showSaveDialog(parentWindow!, {
       title: '保存对比报告',
       defaultPath: fileName,
