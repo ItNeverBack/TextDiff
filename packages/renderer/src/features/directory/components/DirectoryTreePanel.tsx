@@ -2,13 +2,29 @@
  * DirectoryTreePanel 组件
  * 目录树面板，显示目录结构
  */
-import React, { useCallback, MouseEvent } from 'react';
+import React, { useCallback, MouseEvent, useMemo } from 'react';
 import { cn } from '@renderer/lib/utils';
 import { TreeNode, TreeNodeEmpty, TreeNodeLoading, TreeNodeError } from './TreeNode';
 import { useDirectoryCompareStore } from '@renderer/stores/directory.store';
 import { useTreeVisibility, useTreeOperations } from '@renderer/hooks/useTreeExpand';
 import { useVirtualScroll } from '@renderer/hooks/useVirtualScroll';
 import type { DirectoryDiffEntry } from '@shared/types/directory.types';
+
+function filterEntriesBySide(
+  entries: DirectoryDiffEntry[],
+  side: 'left' | 'right'
+): DirectoryDiffEntry[] {
+  const oppositeOnly = side === 'left' ? 'right-only' : 'left-only';
+  return entries
+    .filter(entry => entry.status !== oppositeOnly)
+    .map(entry => {
+      if (entry.children && entry.children.length > 0) {
+        const filteredChildren = filterEntriesBySide(entry.children, side);
+        return { ...entry, children: filteredChildren };
+      }
+      return entry;
+    });
+}
 
 // ============================================
 // 组件属性
@@ -46,11 +62,14 @@ export const DirectoryTreePanel: React.FC<DirectoryTreePanelProps> = ({
   const store = useDirectoryCompareStore();
   const { expandedPaths, selectedEntry, toggleExpand, selectEntry } = store;
 
-  // 树形操作
-  const treeOps = useTreeOperations(entries);
+  const filteredBySide = useMemo(
+    () => filterEntriesBySide(entries, side),
+    [entries, side]
+  );
 
-  // 可见条目（虚拟滚动准备）
-  const { visibleEntries } = useTreeVisibility(entries, expandedPaths);
+  const treeOps = useTreeOperations(filteredBySide);
+
+  const { visibleEntries } = useTreeVisibility(filteredBySide, expandedPaths);
 
   // 使用虚拟滚动Hook
   const {
@@ -159,7 +178,7 @@ export const DirectoryTreePanel: React.FC<DirectoryTreePanelProps> = ({
       );
     }
 
-    if (entries.length === 0) {
+    if (filteredBySide.length === 0) {
       return <TreeNodeEmpty message="没有可显示的文件" />;
     }
 

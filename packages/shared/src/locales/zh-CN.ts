@@ -258,6 +258,7 @@ export const zhCN: TranslationDictionary = {
   'diff.type.insert': '新增',
   'diff.type.delete': '删除',
   'diff.type.replace': '修改',
+  'diff.type.ignored': '已忽略',
 
   // Unified View
   'unifiedView.title': '统一差异视图',

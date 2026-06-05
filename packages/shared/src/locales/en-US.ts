@@ -258,6 +258,7 @@ export const enUS: TranslationDictionary = {
   'diff.type.insert': 'Added',
   'diff.type.delete': 'Deleted',
   'diff.type.replace': 'Modified',
+  'diff.type.ignored': 'Ignored',
 
   // Unified View
   'unifiedView.title': 'Unified Diff View',

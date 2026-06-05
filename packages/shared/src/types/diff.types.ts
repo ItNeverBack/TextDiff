@@ -25,6 +25,8 @@ export interface DiffLine {
   leftContent: string
   rightContent: string
   inlineDiff?: InlineDiff
+  /** 该行是否被忽略规则（如注释忽略）标记，忽略行不参与差异计算，但仍在编辑器中显示为灰色 */
+  isIgnored?: boolean
 }
 
 export interface DiffChunk {

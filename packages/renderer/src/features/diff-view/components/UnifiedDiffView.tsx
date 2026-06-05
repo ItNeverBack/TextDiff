@@ -25,6 +25,7 @@ interface UnifiedDiffLineProps {
 function UnifiedDiffLine({ line, style, isSearchHighlighted, searchRanges }: UnifiedDiffLineProps) {
   const { t } = useI18n()
   const className = `unified-line ${
+    line.isIgnored ? 'unified-ignored' :
     line.type === 'insert' ? 'unified-added' :
     line.type === 'delete' ? 'unified-deleted' :
     line.type === 'replace' ? 'unified-replaced' :
@@ -32,6 +33,7 @@ function UnifiedDiffLine({ line, style, isSearchHighlighted, searchRanges }: Uni
   } ${isSearchHighlighted ? 'search-highlight-current' : ''}`
 
   const getGutterSymbol = () => {
+    if (line.isIgnored) return '/'
     switch (line.type) {
       case 'insert': return '+'
       case 'delete': return '-'
@@ -41,6 +43,7 @@ function UnifiedDiffLine({ line, style, isSearchHighlighted, searchRanges }: Uni
   }
 
   const getGutterTitle = () => {
+    if (line.isIgnored) return t('diff.type.ignored')
     switch (line.type) {
       case 'insert': return t('diff.type.insert')
       case 'delete': return t('diff.type.delete')
@@ -83,6 +86,11 @@ function UnifiedDiffLine({ line, style, isSearchHighlighted, searchRanges }: Uni
   }
 
   const renderContent = () => {
+    if (line.isIgnored) {
+      const content = (line.leftContent || line.rightContent) || '\u00A0'
+      return content
+    }
+
     if (line.type === 'replace' && line.inlineDiff) {
       // 在统一视图中，显示修改后的内容（右侧）及其内联差异
       return <InlineDiff segments={line.inlineDiff.right} />

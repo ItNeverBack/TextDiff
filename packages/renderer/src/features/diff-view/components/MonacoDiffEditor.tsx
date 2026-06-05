@@ -50,6 +50,8 @@ export const MonacoDiffEditor = forwardRef<MonacoDiffEditorRef, MonacoDiffEditor
     const modifiedModelRef = useRef<monaco.editor.ITextModel | null>(null)
     // 所有差异行的高亮（始终显示）
     const allDiffDecorationsRef = useRef<string[]>([])
+    // 被忽略行的装饰（注释行等）
+    const ignoredDecorationsRef = useRef<{ original: string[]; modified: string[] }>({ original: [], modified: [] })
     // 当前活跃差异的标记（随导航变化）
     const activeChunkDecorationsRef = useRef<string[]>([])
     const searchDecorationsRef = useRef<{ original: string[]; modified: string[] }>({ original: [], modified: [] })
@@ -484,6 +486,76 @@ export const MonacoDiffEditor = forwardRef<MonacoDiffEditorRef, MonacoDiffEditor
       }
 
       allDiffDecorationsRef.current = [...leftDecorations, ...rightDecorations]
+    }, [diffResult])
+
+    // 为被忽略行（注释行等）添加灰色整行装饰
+    useEffect(() => {
+      const editor = editorRef.current
+      if (!editor) return
+
+      const originalEditor = editor.getOriginalEditor()
+      const modifiedEditor = editor.getModifiedEditor()
+
+      // 清除旧的忽略行装饰
+      if (ignoredDecorationsRef.current.original.length > 0) {
+        originalEditor.deltaDecorations(ignoredDecorationsRef.current.original, [])
+        ignoredDecorationsRef.current.original = []
+      }
+      if (ignoredDecorationsRef.current.modified.length > 0) {
+        modifiedEditor.deltaDecorations(ignoredDecorationsRef.current.modified, [])
+        ignoredDecorationsRef.current.modified = []
+      }
+
+      if (!diffResult) return
+
+      const originalModel = originalModelRef.current
+      const modifiedModel = modifiedModelRef.current
+      if (!originalModel || originalModel.isDisposed() || !modifiedModel || modifiedModel.isDisposed()) return
+
+      const ignoredDecorationOptions: monaco.editor.IModelDecorationOptions = {
+        isWholeLine: true,
+        className: 'diff-highlight-ignored',
+        inlineClassName: 'diff-ignored-text',
+        linesDecorationsClassName: 'diff-ignored-gutter'
+      }
+
+      const leftIgnoredDecorations: monaco.editor.IModelDeltaDecoration[] = []
+      const rightIgnoredDecorations: monaco.editor.IModelDeltaDecoration[] = []
+
+      for (const line of diffResult.lines) {
+        if (!line.isIgnored) continue
+
+        if (line.leftLineNo !== null && line.leftLineNo > 0 && line.leftLineNo <= originalModel.getLineCount()) {
+          leftIgnoredDecorations.push({
+            range: {
+              startLineNumber: line.leftLineNo,
+              startColumn: 1,
+              endLineNumber: line.leftLineNo,
+              endColumn: originalModel.getLineMaxColumn(line.leftLineNo) || 1
+            },
+            options: ignoredDecorationOptions
+          })
+        }
+
+        if (line.rightLineNo !== null && line.rightLineNo > 0 && line.rightLineNo <= modifiedModel.getLineCount()) {
+          rightIgnoredDecorations.push({
+            range: {
+              startLineNumber: line.rightLineNo,
+              startColumn: 1,
+              endLineNumber: line.rightLineNo,
+              endColumn: modifiedModel.getLineMaxColumn(line.rightLineNo) || 1
+            },
+            options: ignoredDecorationOptions
+          })
+        }
+      }
+
+      if (leftIgnoredDecorations.length > 0) {
+        ignoredDecorationsRef.current.original = originalEditor.deltaDecorations([], leftIgnoredDecorations)
+      }
+      if (rightIgnoredDecorations.length > 0) {
+        ignoredDecorationsRef.current.modified = modifiedEditor.deltaDecorations([], rightIgnoredDecorations)
+      }
     }, [diffResult])
 
     // §2.4.3 标记当前活跃的差异（只在行号区域显示标记，随导航变化）

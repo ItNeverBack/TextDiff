@@ -148,7 +148,24 @@ wsl -d Ubuntu -- bash /mnt/c/Users/m1552/Desktop/code/diffText/dist/vx.x.x/build
 > **注意**：构建目录必须放在 Linux 文件系统（`/tmp/`）下，不能放在 NTFS 挂载路径下，
 > 否则 `dpkg-deb` 会因权限问题报错 `control directory is not a directory`。
 
-### 6. 清理临时文件
+### 6. 重新编译本地原生依赖
+
+构建 Linux 包时，`electron-builder` 会将 `better-sqlite3` 等原生模块重新编译为 Linux 版本，
+导致 `node_modules` 中的 `.node` 文件被替换。此后在 Windows 上运行 `npm run dev` 会报错：
+
+```
+Error: ...\better_sqlite3.node is not a valid Win32 application
+```
+
+**必须**在构建完成后执行以下命令，将原生依赖重新编译为当前平台（Windows）版本：
+
+```powershell
+npm run postinstall
+```
+
+> **注意**：此步骤不可跳过。如果不执行，后续开发调试将无法正常运行。
+
+### 7. 清理临时文件
 
 ```powershell
 Remove-Item "dist/vx.x.x/linux-unpacked" -Recurse -Force
@@ -158,7 +175,7 @@ Remove-Item "dist/vx.x.x/builder-debug.yml" -Force -ErrorAction SilentlyContinue
 Remove-Item "dist/vx.x.x/latest.yml" -Force -ErrorAction SilentlyContinue
 ```
 
-### 7. 提交并推送代码
+### 8. 提交并推送代码
 
 将版本号变更及所有相关代码提交到 Git，并推送到远程仓库：
 

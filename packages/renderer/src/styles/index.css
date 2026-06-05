@@ -68,6 +68,10 @@ html, body {
   --diff-conflict-bg: #fff3cd;
   --diff-conflict-line: #ffc107;
   
+  --diff-ignored-bg: #f8f9fa;
+  --diff-ignored-text: #8c95a0;
+  --diff-ignored-gutter: #ced4da;
+  
   --scrollbar-thumb: #ced4da;
   --scrollbar-track: transparent;
   
@@ -110,6 +114,10 @@ html, body {
   --diff-modified-text: #e3b341;
   --diff-conflict-bg: #3d2e00;
   --diff-conflict-line: #e3b341;
+  
+  --diff-ignored-bg: #2a2a2a;
+  --diff-ignored-text: #6b6b6b;
+  --diff-ignored-gutter: #4a4a4a;
   
   --scrollbar-thumb: #4a4a4a;
   --scrollbar-track: transparent;

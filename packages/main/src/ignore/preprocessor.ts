@@ -39,6 +39,8 @@ export interface PreprocessResult {
   indices: number[]
   /** 被过滤的行数 */
   ignoredLineCount: number
+  /** 被注释忽略规则过滤掉的原始行索引集合（用于在编辑器中标记为灰色） */
+  ignoredLineIndices: Set<number>
 }
 
 /**
@@ -102,6 +104,7 @@ export function preprocessContent(
   const filtered: string[] = []
   const indices: number[] = []
   let ignoredLineCount = 0
+  const ignoredLineIndices = new Set<number>()
 
   const {
     ignoreComments = false,
@@ -114,6 +117,7 @@ export function preprocessContent(
     // 检查是否需要忽略该行（基于正则模式）
     if (shouldIgnoreLine(line, options.ignorePatterns)) {
       ignoredLineCount++
+      ignoredLineIndices.add(i)
       continue
     }
 
@@ -121,6 +125,7 @@ export function preprocessContent(
     if (ignoreComments && commentPrefixes.length > 0) {
       if (isCommentLine(line, commentPrefixes)) {
         ignoredLineCount++
+        ignoredLineIndices.add(i)
         continue
       }
     }
@@ -140,7 +145,8 @@ export function preprocessContent(
     processedLines,
     filtered,
     indices,
-    ignoredLineCount
+    ignoredLineCount,
+    ignoredLineIndices
   }
 }
 

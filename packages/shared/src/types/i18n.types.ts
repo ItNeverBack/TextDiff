@@ -236,6 +236,7 @@ export type DiffTypeTranslationKey =
   | 'diff.type.insert'
   | 'diff.type.delete'
   | 'diff.type.replace'
+  | 'diff.type.ignored'
 
 /** 翻译键名 - Unified View */
 export type UnifiedViewTranslationKey =

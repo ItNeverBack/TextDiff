@@ -743,3 +743,44 @@
   height: 24px;
   background: var(--border-light);
 }
+
+/* ===== 被忽略行（注释行等）样式 ===== */
+
+/* UnifiedDiffView 中的忽略行 */
+.unified-line.unified-ignored {
+  background: var(--diff-ignored-bg, transparent);
+}
+
+.unified-line.unified-ignored .unified-gutter {
+  color: var(--diff-ignored-text, var(--text-muted));
+  font-style: italic;
+  font-size: 10px;
+}
+
+.unified-line.unified-ignored .line-content {
+  color: var(--diff-ignored-text, var(--text-muted));
+}
+
+.unified-line.unified-ignored .unified-line-nums span {
+  color: var(--diff-ignored-text, var(--text-muted));
+  opacity: 0.6;
+}
+
+/* Monaco Editor 中的忽略行 - 整行背景 */
+.diff-highlight-ignored {
+  background: var(--diff-ignored-bg, transparent) !important;
+}
+
+/* Monaco Editor 忽略行的行内文字颜色（通过 inlineClassName 应用到整行文字） */
+.diff-ignored-text {
+  color: var(--diff-ignored-text, var(--text-muted)) !important;
+}
+
+/* Monaco Editor 忽略行的行号槽标记 */
+.diff-ignored-gutter {
+  width: 4px !important;
+  background: var(--diff-ignored-gutter, var(--text-muted)) !important;
+  margin-left: 2px;
+  border-radius: 2px;
+  opacity: 0.5;
+}
